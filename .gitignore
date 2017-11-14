@@ -1,0 +1,12 @@
+/__pycache__
+# virtualenv
+/pip-selfcheck.json
+/bin
+/include
+/lib
+
+/config.py
+
+# emacs
+\#*\#
+*~

@@ -1,0 +1,18 @@
+<div class="motion panel panel-default" id="motion-{{motion.id}}">
+  <div class="motion-title panel-heading">
+    <a href="/motion/{{motion.id}}" class="anchor">#</a>
+    <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else 'Finished' }})
+    <div class="date"><div>Posed: {{motion.posed}}</div><div>Votes until: {{motion.deadline}}</div></div>
+  </div>
+  <div class="panel-body">
+    <p>{{motion.content}}</p>
+{%- if motion.yes or motion.no or motion.abstain %}
+    <p>
+{%- for vote in ['yes', 'no', 'abstain'] %}
+{{vote|capitalize}} <span class="badge">{{motion[vote]}}</span><br>
+{%- endfor %}
+    </p>
+{%- endif %}
+  </div>
+{%- block content %}{% endblock %}
+</div>

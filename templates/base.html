@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>{% block title %}Motion list{% endblock %}</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<style type="text/css">
+.motion {
+  border: 1px solid black;
+}
+.motion .motion-title input {
+  width: 80%;
+}
+.motion textarea {
+  display: block;
+}
+.motion .motion-title{
+  border-bottom: 1px solid black;
+}
+.motion .motion-title .title-text{
+  font-size: 15pt;
+  font-weight: bold;
+}
+.motion .anchor {
+  text-decoration-line: none;
+  color: inherit;
+  margin-right: 5px;
+}
+.motion .motion-title .date {
+  position: relative;
+  right: 0px;
+  margin-right: 5px;
+}
+.motion p {
+  padding: 10px;
+}
+</style>
+</head>
+<body>
+{% block body %}
+{% endblock %}
+</body>
+</html>

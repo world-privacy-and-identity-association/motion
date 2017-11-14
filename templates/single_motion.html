@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title -%}
+Motion: {{motion.name}}
+{%- endblock %}
+{% block body %}
+{%- include 'motion.html' %}
+{%- if motion.running %}
+<form action="/motion/{{motion.id}}/vote" method="POST">
+{%- for vote in ['yes','no','abstain'] %}
+<button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{vote}}</button>
+{%- endfor %}
+</form>
+{%- endif %}
+{%- endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="container">
+<form action="/motion" method="POST">
+<div class="motion panel panel-default">
+  <div class="motion-title panel-heading"><input class="form-control" placeholder="Motion title" type="text" name="title" id="title"></div>
+  <div class="panel-body">
+    <textarea class="form-control" placeholder="Motion content" name="content" rows="8" cols="70"></textarea>
+    <button class="btn btn-primary" type="submit">Submit Motion</button>
+  </div>
+</div>
+</form>
+{% for motion in motions %}
+{% include 'motion.html' %}
+{% endfor %}
+{%- if more %}
+<a href="/?start={{ more }}">Next</a>
+{%- endif %}
+</div>
+{%- endblock %}
