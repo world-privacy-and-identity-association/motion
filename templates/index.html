@@ -17,6 +17,13 @@
   </div>
 </div>
 </form>
+{% if prev %}
+{% if prev == -1 %}
+<a href="/">Prev</a>
+{% else %}
+<a href="/?start={{ prev }}">Prev</a>
+{% endif %}
+{% endif %}
 {% for motion in motions %}
 {% include 'motion.html' %}
 {% endfor %}

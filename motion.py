@@ -36,13 +36,19 @@ def main():
                              + "COUNT(CASE WHEN result='no' THEN 'no' ELSE NULL END) as no, "\
                              + "COUNT(CASE WHEN result='abstain' THEN 'abstain' ELSE NULL END) as abstain "\
                              + "FROM vote GROUP BY motion_id, voter_id) as votes ON votes.motion_id=motion.id "
+    prev=None
     if start == -1:
         p = get_db().prepare(q + "ORDER BY id DESC LIMIT 11")
         rv = p()
     else:
         p = get_db().prepare(q + "WHERE id <= $1 ORDER BY id DESC LIMIT 11")
         rv = p(start)
-    return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times)
+        rs = get_db().prepare("SELECT id FROM motion WHERE id > $1 ORDER BY id ASC LIMIT 10")(start)
+        if len(rs) == 10:
+            prev = rs[9][0]
+        else:
+            prev = -1
+    return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times, prev=prev)
 
 @app.route("/motion", methods=['POST'])
 def put_motion():
@@ -75,9 +81,8 @@ def vote(motion):
             db.prepare("INSERT INTO vote (motion_id, voter_id, result) VALUES($1,$2,$3)")(motion,voter,v)
         else:
             db.prepare("UPDATE vote SET result=$3, entered=CURRENT_TIMESTAMP WHERE motion_id=$1 AND voter_id = $2")(motion,voter,v)
-    return redirect("/motion/" + str(motion))
+    return redirect("/?start=" + str(motion) + "#motion-" + str(motion))
 
 # TODO cancel running motion (with comment)
-# TODO pagination previous link
 # TODO authentication/user management
 # TODO crop time at second precision
