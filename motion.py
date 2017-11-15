@@ -5,6 +5,7 @@ from flask import request
 import postgresql
 import config
 
+times=[3,5,14]
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -41,12 +42,15 @@ def main():
     else:
         p = get_db().prepare(q + "WHERE id <= $1 ORDER BY id DESC LIMIT 11")
         rv = p(start)
-    return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None)
+    return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times)
 
 @app.route("/motion", methods=['POST'])
 def put_motion():
-    p = get_db().prepare("INSERT INTO motion(\"name\", \"content\") VALUES($1, $2)")
-    p(request.form.get("title", ""), request.form.get("content",""))
+    time = int(request.form.get("days", "3"));
+    if time not in times:
+        return "Error, invalid length"
+    p = get_db().prepare("INSERT INTO motion(\"name\", \"content\", \"deadline\") VALUES($1, $2, CURRENT_TIMESTAMP + $3 * interval '1 days')")
+    p(request.form.get("title", ""), request.form.get("content",""), time)
     return redirect("/")
 
 voter=1

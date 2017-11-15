@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="container">
-<form action="/motion" method="POST">
+<form action="/motion" method="POST" class="form-inline">
 <div class="motion panel panel-default">
-  <div class="motion-title panel-heading"><input class="form-control" placeholder="Motion title" type="text" name="title" id="title"></div>
+  <div class="motion-title panel-heading from-group">
+    <input class="form-control" placeholder="Motion title" type="text" name="title" id="title">
+    <select class="form-control" name="days">
+      {%- for time in times %}
+      <option>{{time}}</option>
+      {%- endfor %}
+    </select>
+  </div>
   <div class="panel-body">
-    <textarea class="form-control" placeholder="Motion content" name="content" rows="8" cols="70"></textarea>
+    <textarea class="form-control" placeholder="Motion content" name="content" rows="8" cols="70"></textarea><br>
     <button class="btn btn-primary" type="submit">Submit Motion</button>
   </div>
 </div>
