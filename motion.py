@@ -72,3 +72,8 @@ def vote(motion):
         else:
             db.prepare("UPDATE vote SET result=$3, entered=CURRENT_TIMESTAMP WHERE motion_id=$1 AND voter_id = $2")(motion,voter,v)
     return redirect("/motion/" + str(motion))
+
+# TODO cancel running motion (with comment)
+# TODO pagination previous link
+# TODO authentication/user management
+# TODO crop time at second precision
