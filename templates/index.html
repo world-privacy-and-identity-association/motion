@@ -1,11 +1,22 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="container">
+{%- if categories|length != 0 %}
 <form action="/motion" method="POST" class="form-inline">
 <div class="motion panel panel-default">
   <div class="motion-title panel-heading from-group">
-    <input class="form-control" placeholder="Motion title" type="text" name="title" id="title">
-    <select class="form-control" name="days">
+    <input class="form-control motion-title-input" placeholder="Motion title" type="text" name="title" id="title">
+    {%- if categories|length == 1 %}
+    <input type="text" class="float form-control" maxwidth="10" disabled value="{{categories[0]}}">
+    <input type="hidden" name="category" value="{{categories[0]}}">
+    {%- else %}
+    <select class="float form-control" name="category">
+      {%- for cat in categories %}
+      <option>{{cat}}</option>
+      {%- endfor %}
+    </select>
+    {%- endif %}
+    <select class="float form-control" name="days">
       {%- for time in times %}
       <option>{{time}}</option>
       {%- endfor %}
@@ -17,16 +28,17 @@
   </div>
 </div>
 </form>
-{% if prev %}
-{% if prev == -1 %}
+{%- endif %}
+{%- if prev %}
+{%- if prev == -1 %}
 <a href="/">Prev</a>
-{% else %}
+{%- else %}
 <a href="/?start={{ prev }}">Prev</a>
-{% endif %}
-{% endif %}
-{% for motion in motions %}
+{%- endif %}
+{%- endif %}
+{%- for motion in motions %}
 {% include 'motion.html' %}
-{% endfor %}
+{%- endfor %}
 {%- if more %}
 <a href="/?start={{ more }}">Next</a>
 {%- endif %}

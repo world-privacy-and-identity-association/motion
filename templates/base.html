@@ -7,8 +7,15 @@
 .motion {
   border: 1px solid black;
 }
-.motion .motion-title input {
+.motion .motion-title input.motion-title-input {
   width: 80%;
+}
+.motion .motion-title .float {
+  float: right;
+}
+.motion .motion-title .motion-type {
+  margin: 5px;
+  float: right;
 }
 .motion textarea {
   display: block;
@@ -36,7 +43,7 @@
 </style>
 </head>
 <body>
-{% block body %}
+{%- block body %}
 {% endblock %}
 </body>
 </html>

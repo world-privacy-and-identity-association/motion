@@ -5,6 +5,7 @@ CREATE TABLE voter (id serial NOT NULL, email VARCHAR(255) NOT NULL, PRIMARY KEY
 DROP TABLE IF EXISTS motion;
 CREATE TABLE motion (id serial NOT NULL,
                    name VARCHAR(250) NOT NULL,
+                   type VARCHAR(250) NOT NULL,
                    content text NOT NULL,
                    posed timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                    posed_by int NOT NULL,
