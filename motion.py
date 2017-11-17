@@ -3,7 +3,6 @@ from flask import Flask
 from flask import render_template, redirect
 from flask import request
 import postgresql
-import config
 import filters
 
 times=[3,5,14]
@@ -11,14 +10,15 @@ times=[3,5,14]
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = postgresql.open(config.DATABASE, user=config.USER, password=config.PASSWORD)
+        db = g._database = postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD"))
     #db.row_factory = sqlite3.Row
     return db
 
 app = Flask(__name__)
 app.register_blueprint(filters.blueprint)
 
-
+# Load config
+app.config.from_pyfile('config.py')
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -107,4 +107,3 @@ def vote(motion):
     return motion_edited(motion)
 
 # TODO authentication/user management
-# TODO load config with flask mechanism
