@@ -10,5 +10,9 @@ Motion: {{motion.name}}
 <button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{vote}}</button>
 {%- endfor %}
 </form>
+<form action="/motion/{{motion.id}}/cancel" method="POST">
+<input type="text" name="reason" required="yes">
+<button type="submit">Cancel</button>
+</form>
 {%- endif %}
 {%- endblock %}

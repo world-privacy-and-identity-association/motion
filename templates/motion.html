@@ -1,10 +1,14 @@
 <div class="motion panel panel-default" id="motion-{{motion.id}}">
   <div class="motion-title panel-heading">
     <a href="/motion/{{motion.id}}" class="anchor">#</a>
-    <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else 'Finished' }})
+    <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else ('Canceled' if motion.canceled != None else 'Finished') }})
     <div class="date">
-      <div>Posed: {{motion.posed|timestamp}}</div>
+      <div>Posed: {{motion.posed|timestamp}} by {{motion.poser}}</div>
+{%- if motion.canceled != None %}
+      <div>Canceled: {{motion.canceled|timestamp}} by {{motion.canceler}}</div></div>
+{%- else %}
       <div>Votes until: {{motion.deadline|timestamp}}</div></div>
+{%- endif %}
   </div>
   <div class="panel-body">
     <p>{{motion.content}}</p>
@@ -14,6 +18,9 @@
 {{vote|capitalize}} <span class="badge">{{motion[vote]}}</span><br>
 {%- endfor %}
     </p>
+{%- endif %}
+{%- if motion.canceled != None %}
+    <p>Cancelation reason: {{motion.cancelation_reason}}</p>
 {%- endif %}
   </div>
 {%- block content %}{% endblock %}
