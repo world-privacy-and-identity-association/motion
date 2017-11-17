@@ -4,6 +4,7 @@ from flask import render_template, redirect
 from flask import request
 import postgresql
 import config
+import filters
 
 times=[3,5,14]
 
@@ -15,6 +16,9 @@ def get_db():
     return db
 
 app = Flask(__name__)
+app.register_blueprint(filters.blueprint)
+
+
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -85,4 +89,3 @@ def vote(motion):
 
 # TODO cancel running motion (with comment)
 # TODO authentication/user management
-# TODO crop time at second precision

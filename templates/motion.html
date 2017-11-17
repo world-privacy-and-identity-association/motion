@@ -2,7 +2,9 @@
   <div class="motion-title panel-heading">
     <a href="/motion/{{motion.id}}" class="anchor">#</a>
     <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else 'Finished' }})
-    <div class="date"><div>Posed: {{motion.posed}}</div><div>Votes until: {{motion.deadline}}</div></div>
+    <div class="date">
+      <div>Posed: {{motion.posed|timestamp}}</div>
+      <div>Votes until: {{motion.deadline|timestamp}}</div></div>
   </div>
   <div class="panel-body">
     <p>{{motion.content}}</p>
