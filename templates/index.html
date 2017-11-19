@@ -31,16 +31,16 @@
 {%- endif %}
 {%- if prev %}
 {%- if prev == -1 %}
-<a href="/">Prev</a>
+<a href="/" class="btn btn-primary">Prev</a>
 {%- else %}
-<a href="/?start={{ prev }}">Prev</a>
+<a href="/?start={{ prev }}" class="btn btn-primary">Prev</a>
 {%- endif %}
 {%- endif %}
 {%- for motion in motions %}
 {% include 'motion.html' %}
 {%- endfor %}
 {%- if more %}
-<a href="/?start={{ more }}">Next</a>
+<a href="/?start={{ more }}" class="btn btn-primary">Next</a>
 {%- endif %}
 </div>
 {%- endblock %}
