@@ -13,10 +13,11 @@ Motion: {{motion.name}}
 </form>
 {%- endif %}
 {%- if may_cancel %}
-<form action="/motion/{{motion.id}}/cancel" method="POST">
-<input type="text" name="reason" required="yes">
-<button type="submit">Cancel</button>
+<form action="/motion/{{motion.id}}/cancel" method="POST" class="form-inline">
+<input type="text" name="reason" class="form-control" required="yes">
+<button type="submit" class="btn btn-danger">Cancel</button>
 </form>
 {%- endif %}
 {%- endif %}
+<a href="/?start={{motion.id}}#motion-{{motion.id}}">Back</a>
 {%- endblock %}
