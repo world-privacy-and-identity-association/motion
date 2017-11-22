@@ -3,6 +3,11 @@
 <div class="container">
 {%- if categories|length != 0 %}
 <form action="/motion" method="POST" class="form-inline">
+<div class="panel panel-default">
+<div class="panel-body">
+User: {{g.user}}
+</div>
+</div>
 <div class="motion panel panel-default">
   <div class="motion-title panel-heading from-group">
     <input class="form-control motion-title-input" placeholder="Motion title" type="text" name="title" id="title">

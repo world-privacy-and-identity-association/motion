@@ -49,6 +49,7 @@ def lookup_user():
             db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(user)
             rv = db.prepare("SELECT id FROM voter WHERE email=$1")(user)
         g.voter = rv[0].get("id");
+    g.user = user
     g.roles = {}
 
     for r in roles:
