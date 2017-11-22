@@ -25,12 +25,22 @@ groups=["fellowship", "board"]
 @app.before_request
 def lookup_user():
     env = request.environ
-    if "USER" not in env or "ROLES" not in env:
+    user = None
+    if "USER_ROLES" in env:
+        parts = env.get("USER_ROLES").split("/", 1)
+        user = parts[0]
+        roles = parts[1]
+
+    if "USER" in env and "ROLES" in env:
+        user = env.get("USER")
+        roles = env.get("ROLES")
+
+    if user is None:
         return "Server misconfigured", 500
-    user = env.get("USER")
-    roles = env.get("ROLES").split(" ")
-    if roles == [""]:
-        roles = []
+    roles = roles.split(" ")
+
+    if user == "<invalid>":
+        return "Access denied", 403;
 
     db = get_db()
     with db.xact():
