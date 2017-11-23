@@ -4,6 +4,18 @@ Motion: {{motion.name}}
 {%- endblock %}
 {% block body %}
 {%- include 'motion.html' %}
+{%- if votes %}
+<div class="panel panel-info" id="votes">
+  <div class="panel-heading">
+    Motion Votes
+  </div>
+  <div class="panel-body">
+    {%- for row in votes %}
+    <div>{{row.email}}: {{row.result}}</div>
+    {%- endfor %}
+  </div>
+</div>
+{%- endif %}
 {%- if motion.running %}
 {%- if may_vote %}
 <form action="/motion/{{motion.id}}/vote" method="POST">

@@ -141,7 +141,10 @@ def show_motion(motion):
                          + "LEFT JOIN voter canceler ON canceler.id = motion.canceled_by "
                          + "WHERE motion.id=$1")
     rv = p(motion, g.voter)
-    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")))
+    votes = None
+    if may("audit", rv[0].get("type")):
+        votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(motion);
+    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), votes=votes)
 
 @app.route("/motion/<int:motion>/vote", methods=['POST'])
 def vote(motion):
