@@ -1,4 +1,9 @@
-<div class="motion panel panel-default" id="motion-{{motion.id}}">
+<div class="motion panel
+{%- if motion.running %} panel-default
+{%- elif motion.canceled %} panel-warning
+{%- elif motion.yes is defined %}{% if motion.yes > motion.no %} panel-success{% else %} panel-danger{% endif %}
+{%- else %} panel-default{%- endif -%}
+" id="motion-{{motion.id}}">
   <div class="motion-title panel-heading">
     <a href="/motion/{{motion.id}}" class="anchor">#</a>
     <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else ('Canceled' if motion.canceled != None else 'Finished') }})
