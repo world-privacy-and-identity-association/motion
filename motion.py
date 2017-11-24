@@ -106,6 +106,11 @@ def main():
     return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times, prev=prev,
                            categories=get_allowed_cats("create"))
 
+def rel_redirect(loc):
+    r = redirect(loc)
+    r.autocorrect_location_header = False
+    return r
+
 @app.route("/motion", methods=['POST'])
 def put_motion():
     cat=request.form.get("category", "")
@@ -116,10 +121,10 @@ def put_motion():
         return "Error, invalid length", 500
     p = get_db().prepare("INSERT INTO motion(\"name\", \"content\", \"deadline\", \"posed_by\", \"type\") VALUES($1, $2, CURRENT_TIMESTAMP + $3 * interval '1 days', $4, $5)")
     p(request.form.get("title", ""), request.form.get("content",""), time, g.voter, cat)
-    return redirect("/")
+    return rel_redirect("/")
 
 def motion_edited(motion):
-    return redirect("/?start=" + str(motion) + "#motion-" + str(motion))
+    return rel_redirect("/?start=" + str(motion) + "#motion-" + str(motion))
 
 @app.route("/motion/<int:motion>/cancel", methods=['POST'])
 def cancel_motion(motion):
