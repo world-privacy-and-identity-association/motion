@@ -147,7 +147,7 @@ def show_motion(motion):
                          + "WHERE motion.id=$1")
     rv = p(motion, g.voter)
     votes = None
-    if may("audit", rv[0].get("type")):
+    if may("audit", rv[0].get("type")) and not rv[0].get("running") and not rv[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(motion);
     return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), votes=votes)
 
