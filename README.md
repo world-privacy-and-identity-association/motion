@@ -13,8 +13,4 @@ To debug-run:
 LANG=C.UTF-8 FLASK_DEBUG=1 FLASK_APP=motion.py flask run
 ```
 
-To install database schema, run in an interactive python shell (`python`):
-```
-import motion
-motion.init_db()
-```
+The database schema is automatically installed when the table "schema_version" does not exist and the application is started.

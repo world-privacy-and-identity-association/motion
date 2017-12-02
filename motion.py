@@ -78,8 +78,16 @@ def close_connection(exception):
 def init_db():
     with app.app_context():
         db = get_db()
-        with app.open_resource('schema.sql', mode='r') as f:
-            db.execute(f.read())
+        try:
+            ver = db.prepare("SELECT version FROM schema_version")()[0][0];
+            print("Database Schema version: ", ver)
+        except postgresql.exceptions.UndefinedTableError:
+            ver = 0
+        if ver < 1:
+            with app.open_resource('sql/schema.sql', mode='r') as f:
+                db.execute(f.read())
+
+init_db()
 
 @app.route("/")
 def main():
