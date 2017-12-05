@@ -18,14 +18,14 @@ Motion: {{motion.name}}
 {%- endif %}
 {%- if motion.running %}
 {%- if may_vote %}
-<form action="/motion/{{motion.id}}/vote" method="POST">
+<form action="/motion/{{motion.identifier}}/vote" method="POST">
 {%- for vote in ['yes','no','abstain'] %}
 <button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{vote}}</button>
 {%- endfor %}
 </form>
 {%- endif %}
 {%- if may_cancel %}
-<form action="/motion/{{motion.id}}/cancel" method="POST" class="form-inline">
+<form action="/motion/{{motion.identifier}}/cancel" method="POST" class="form-inline">
 <input type="text" placeholder="cancelation reason" name="reason" class="form-control" required="yes">
 <button type="submit" class="btn btn-danger">Cancel</button>
 </form>

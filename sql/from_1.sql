@@ -1,0 +1,1 @@
+ALTER TABLE "motion" ADD COLUMN "identifier" VARCHAR(20) DEFAULT NULL;

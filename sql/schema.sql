@@ -4,6 +4,7 @@ CREATE TABLE voter (id serial NOT NULL, email VARCHAR(255) NOT NULL, PRIMARY KEY
 
 DROP TABLE IF EXISTS motion;
 CREATE TABLE motion (id serial NOT NULL,
+                   identifier VARCHAR(20) NOT NULL,
                    name VARCHAR(250) NOT NULL,
                    type VARCHAR(250) NOT NULL,
                    content text NOT NULL,
@@ -14,7 +15,7 @@ CREATE TABLE motion (id serial NOT NULL,
                    cancelation_reason text NULL DEFAULT NULL,
                    canceled_by int NULL DEFAULT NULL,
                    PRIMARY KEY(id));
-
+CREATE UNIQUE INDEX motion_ident ON motion (identifier);
 
 DROP TABLE IF EXISTS vote;
 DROP TYPE IF EXISTS "vote_type";

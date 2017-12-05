@@ -5,9 +5,9 @@
 {%- else %} panel-default{%- endif -%}
 " id="motion-{{motion.id}}">
   <div class="motion-title panel-heading">
-    <a href="/motion/{{motion.id}}" class="anchor">#</a>
     <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else ('Canceled' if motion.canceled != None else 'Finished') }})
     <span class="motion-type">{{motion.type}}</span>
+    <div># <a href="/motion/{{motion.identifier}}" class="anchor">{{motion.identifier}}</a></div>
     <div class="date">
       <div>Posed: {{motion.posed|timestamp}} by {{motion.poser}}</div>
 {%- if motion.canceled != None %}
