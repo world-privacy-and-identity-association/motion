@@ -1,7 +1,7 @@
 <div class="motion panel
 {%- if motion.running %} panel-default
 {%- elif motion.canceled %} panel-warning
-{%- elif motion.yes is defined %}{% if motion.yes > motion.no %} panel-success{% else %} panel-danger{% endif %}
+{%- elif motion.yes is defined %}{% if motion.yes != None and motion.no != None and motion.yes > motion.no %} panel-success{% else %} panel-danger{% endif %}
 {%- else %} panel-default{%- endif -%}
 " id="motion-{{motion.id}}">
   <div class="motion-title panel-heading">
