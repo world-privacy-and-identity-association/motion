@@ -28,4 +28,4 @@ CREATE TABLE vote (motion_id INTEGER NOT NULL,
 
 DROP TABLE IF EXISTS schema_version;
 CREATE TABLE schema_version (version INTEGER NOT NULL);
-INSERT INTO schema_version(version) VALUES(1);
+INSERT INTO schema_version(version) VALUES(2);
