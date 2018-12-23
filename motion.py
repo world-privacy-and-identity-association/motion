@@ -88,6 +88,7 @@ def init_db():
         if ver < 1:
             with app.open_resource('sql/schema.sql', mode='r') as f:
                 db.execute(f.read())
+            return
 
         if ver < 2:
             with app.open_resource('sql/from_1.sql', mode='r') as f:
