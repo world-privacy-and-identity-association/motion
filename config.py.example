@@ -1,3 +1,8 @@
 DATABASE="..."
 USER="..."
 PASSWORD="..."
+
+DEFAULT_HOST="hostname for migration from db version < 2"
+
+groups=["group1", "group1"] # kinds of motion
+group_prefix={"group1": "g1", "group2": "g2"} # prefixes for motion identifiers

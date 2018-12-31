@@ -20,8 +20,8 @@ app.register_blueprint(filters.blueprint)
 # Load config
 app.config.from_pyfile('config.py')
 
-groups=["fellowship", "board"]
-prefix={"fellowship": "f", "board": "m"}
+groups=app.config.get("groups")
+prefix=app.config.get("group_prefix")
 
 @app.before_request
 def lookup_user():
@@ -110,6 +110,14 @@ def init_db():
                 db.prepare("UPDATE \"schema_version\" SET \"version\"=2")()
                 db.prepare("CREATE UNIQUE INDEX motion_ident ON motion (identifier)")()
 
+        if ver < 3:
+            with app.open_resource('sql/from_2.sql', mode='r') as f:
+                db.execute(f.read())
+                db.prepare("UPDATE \"motion\" SET \"host\"=$1")(app.config.get("DEFAULT_HOST"))
+                db.prepare("ALTER TABLE \"motion\" ALTER COLUMN \"host\" SET NOT NULL")()
+                db.prepare("UPDATE \"schema_version\" SET \"version\"=3")()
+
+
 init_db()
 
 @app.route("/")
@@ -124,12 +132,12 @@ def main():
                              + "LEFT JOIN voter canceler ON canceler.id = motion.canceled_by "
     prev=None
     if start == -1:
-        p = get_db().prepare(q + "ORDER BY motion.id DESC LIMIT 11")
-        rv = p()
+        p = get_db().prepare(q + "WHERE motion.host = $1 ORDER BY motion.id DESC LIMIT 11")
+        rv = p(request.host)
     else:
-        p = get_db().prepare(q + "WHERE motion.id <= $1 ORDER BY motion.id DESC LIMIT 11")
-        rv = p(start)
-        rs = get_db().prepare("SELECT id FROM motion WHERE motion.id > $1 ORDER BY id ASC LIMIT 10")(start)
+        p = get_db().prepare(q + "WHERE motion.host = $1 AND motion.id <= $2 ORDER BY motion.id DESC LIMIT 11")
+        rv = p(request.host, start)
+        rs = get_db().prepare("SELECT id FROM motion WHERE motion.host = $1 AND motion.id > $2 ORDER BY id ASC LIMIT 10")(request.host, start)
         if len(rs) == 10:
             prev = rs[9][0]
         else:
@@ -153,15 +161,15 @@ def put_motion():
     db = get_db()
     with db.xact():
         t = db.prepare("SELECT CURRENT_TIMESTAMP")()[0][0];
-        s = db.prepare("SELECT MAX(\"identifier\") FROM \"motion\" WHERE \"type\"=$1 AND DATE(\"posed\")=DATE(CURRENT_TIMESTAMP)")
-        sr = s(cat)
+        s = db.prepare("SELECT MAX(\"identifier\") FROM \"motion\" WHERE \"type\"=$1 AND \"host\"=$2 DATE(\"posed\")=DATE(CURRENT_TIMESTAMP)")
+        sr = s(cat, request.host)
         ident=""
         if len(sr) == 0 or sr[0][0] is None:
             ident=prefix[cat]+"."+t.strftime("%Y%m%d")+".001"
         else:
             ident=prefix[cat]+"."+t.strftime("%Y%m%d")+"."+("%03d" % (int(sr[0][0].split(".")[2])+1))
-        p = db.prepare("INSERT INTO motion(\"name\", \"content\", \"deadline\", \"posed_by\", \"type\", \"identifier\") VALUES($1, $2, CURRENT_TIMESTAMP + $3 * interval '1 days', $4, $5, $6)")
-        p(request.form.get("title", ""), request.form.get("content",""), time, g.voter, cat, ident)
+        p = db.prepare("INSERT INTO motion(\"name\", \"content\", \"deadline\", \"posed_by\", \"type\", \"identifier\", \"host\") VALUES($1, $2, CURRENT_TIMESTAMP + $3 * interval '1 days', $4, $5, $6, $7)")
+        p(request.form.get("title", ""), request.form.get("content",""), time, g.voter, cat, ident, request.host)
     return rel_redirect("/")
 
 def motion_edited(motion):
@@ -169,7 +177,7 @@ def motion_edited(motion):
 
 @app.route("/motion/<string:motion>/cancel", methods=['POST'])
 def cancel_motion(motion):
-    rv = get_db().prepare("SELECT id, type FROM motion WHERE identifier=$1")(motion);
+    rv = get_db().prepare("SELECT id, type FROM motion WHERE identifier=$1 AND request.host")(motion, request.host);
     if len(rv) == 0:
         return "Error, Not found", 404
     id = rv[0].get("id")
@@ -177,7 +185,7 @@ def cancel_motion(motion):
         return "Forbidden", 403
     if request.form.get("reason", "none") == "none":
         return "Error, form requires reason", 500
-    rv = get_db().prepare("UPDATE motion SET canceled=CURRENT_TIMESTAMP, cancelation_reason=$1, canceled_by=$2 WHERE identifier=$3 AND canceled is NULL")(request.form.get("reason", ""), g.voter, motion)
+    rv = get_db().prepare("UPDATE motion SET canceled=CURRENT_TIMESTAMP, cancelation_reason=$1, canceled_by=$2 WHERE identifier=$3 AND host=$4 AND canceled is NULL")(request.form.get("reason", ""), g.voter, motion, request.host)
     return motion_edited(id)
 
 @app.route("/motion/<string:motion>")
@@ -186,8 +194,8 @@ def show_motion(motion):
                          + "LEFT JOIN vote on vote.motion_id=motion.id AND vote.voter_id=$2 "\
                          + "LEFT JOIN voter poser ON poser.id = motion.posed_by "\
                          + "LEFT JOIN voter canceler ON canceler.id = motion.canceled_by "
-                         + "WHERE motion.identifier=$1")
-    rv = p(motion, g.voter)
+                         + "WHERE motion.identifier=$1 AND motion.host=$3")
+    rv = p(motion, g.voter, request.host)
     votes = None
     if may("audit", rv[0].get("type")) and not rv[0].get("running") and not rv[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(rv[0].get("id"));
@@ -198,17 +206,17 @@ def vote(motion):
     v = request.form.get("vote", "abstain")
     db = get_db()
     with db.xact():
-        rv = db.prepare("SELECT id, type FROM motion WHERE identifier=$1")(motion);
+        rv = db.prepare("SELECT id, type FROM motion WHERE identifier=$1 AND host=$2")(motion, host);
         if len(rv) == 0:
             return "Error, Not found", 404
         if not may("vote", rv[0].get("type")):
             return "Forbidden", 403
-        p = db.prepare("SELECT deadline > CURRENT_TIMESTAMP FROM motion WHERE identifier = $1")
+        p = db.prepare("SELECT deadline > CURRENT_TIMESTAMP FROM motion WHERE identifier = $1 AND host=$2")
         id = rv[0].get("id")
-        if not p(motion)[0][0]:
+        if not p(motion, request.host)[0][0]:
             return "Error, motion deadline has passed", 500
-        p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2")
-        rv = p(id, g.voter)
+        p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2 AND host=$3")
+        rv = p(id, g.voter, request.host)
         if len(rv) == 0:
             db.prepare("INSERT INTO vote(motion_id, voter_id, result) VALUES($1,$2,$3)")(id, g.voter, v)
         else:

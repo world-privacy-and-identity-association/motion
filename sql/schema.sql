@@ -7,6 +7,7 @@ CREATE TABLE motion (id serial NOT NULL,
                    identifier VARCHAR(20) NOT NULL,
                    name VARCHAR(250) NOT NULL,
                    type VARCHAR(250) NOT NULL,
+                   host VARCHAR(500) NOT NULL,
                    content text NOT NULL,
                    posed timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                    posed_by int NOT NULL,
@@ -28,4 +29,4 @@ CREATE TABLE vote (motion_id INTEGER NOT NULL,
 
 DROP TABLE IF EXISTS schema_version;
 CREATE TABLE schema_version (version INTEGER NOT NULL);
-INSERT INTO schema_version(version) VALUES(2);
+INSERT INTO schema_version(version) VALUES(3);
