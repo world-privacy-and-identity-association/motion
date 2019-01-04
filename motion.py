@@ -20,11 +20,12 @@ app.register_blueprint(filters.blueprint)
 # Load config
 app.config.from_pyfile('config.py')
 
-groups=app.config.get("groups")
-prefix=app.config.get("group_prefix")
+prefix=app.config.get("GROUP_PREFIX")
 
 @app.before_request
 def lookup_user():
+    global prefix
+
     env = request.environ
     user = None
     if "USER_ROLES" in env:
@@ -59,7 +60,7 @@ def lookup_user():
         if a[0] not in g.roles:
             g.roles[a[0]] = []
         if val == "*":
-            g.roles[a[0]] = groups
+            g.roles[a[0]] = [group for group in prefix[request.host]]
         else:
             g.roles[a[0]].append(val)
     return None
@@ -94,7 +95,7 @@ def init_db():
             with app.open_resource('sql/from_1.sql', mode='r') as f:
                 db.execute(f.read())
                 ct={}
-                for g in groups:
+                for g in [group for group in prefix[app.config.get("DEFAULT_HOST")]]:
                     ct[g] = {"dt": "", "c": 0}
 
                 p = db.prepare("UPDATE \"motion\" SET \"identifier\"=$1 WHERE \"id\"=$2")
@@ -104,7 +105,7 @@ def init_db():
                         ct[row[1]]["dt"] = dt
                         ct[row[1]]["c"] = 0
                     ct[row[1]]["c"] = ct[row[1]]["c"] + 1
-                    name=prefix[row[1]]+"."+dt+"."+("%03d" % ct[row[1]]["c"])
+                    name=prefix[app.config.get("DEFAULT_HOST")][row[1]]+"."+dt+"."+("%03d" % ct[row[1]]["c"])
                     p(name, row[0])
                 db.prepare("ALTER TABLE \"motion\" ALTER COLUMN \"identifier\" SET NOT NULL")()
                 db.prepare("UPDATE \"schema_version\" SET \"version\"=2")()
@@ -165,9 +166,9 @@ def put_motion():
         sr = s(cat, request.host)
         ident=""
         if len(sr) == 0 or sr[0][0] is None:
-            ident=prefix[cat]+"."+t.strftime("%Y%m%d")+".001"
+            ident=prefix[request.host][cat]+"."+t.strftime("%Y%m%d")+".001"
         else:
-            ident=prefix[cat]+"."+t.strftime("%Y%m%d")+"."+("%03d" % (int(sr[0][0].split(".")[2])+1))
+            ident=prefix[request.host][cat]+"."+t.strftime("%Y%m%d")+"."+("%03d" % (int(sr[0][0].split(".")[2])+1))
         p = db.prepare("INSERT INTO motion(\"name\", \"content\", \"deadline\", \"posed_by\", \"type\", \"identifier\", \"host\") VALUES($1, $2, CURRENT_TIMESTAMP + $3 * interval '1 days', $4, $5, $6, $7)")
         p(request.form.get("title", ""), request.form.get("content",""), time, g.voter, cat, ident, request.host)
     return rel_redirect("/")
