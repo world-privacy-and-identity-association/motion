@@ -162,7 +162,7 @@ def put_motion():
     db = get_db()
     with db.xact():
         t = db.prepare("SELECT CURRENT_TIMESTAMP")()[0][0];
-        s = db.prepare("SELECT MAX(\"identifier\") FROM \"motion\" WHERE \"type\"=$1 AND \"host\"=$2 DATE(\"posed\")=DATE(CURRENT_TIMESTAMP)")
+        s = db.prepare("SELECT MAX(\"identifier\") FROM \"motion\" WHERE \"type\"=$1 AND \"host\"=$2 AND DATE(\"posed\")=DATE(CURRENT_TIMESTAMP)")
         sr = s(cat, request.host)
         ident=""
         if len(sr) == 0 or sr[0][0] is None:
