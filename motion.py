@@ -178,7 +178,7 @@ def motion_edited(motion):
 
 @app.route("/motion/<string:motion>/cancel", methods=['POST'])
 def cancel_motion(motion):
-    rv = get_db().prepare("SELECT id, type FROM motion WHERE identifier=$1 AND request.host")(motion, request.host);
+    rv = get_db().prepare("SELECT id, type FROM motion WHERE identifier=$1 AND host=$2")(motion, request.host);
     if len(rv) == 0:
         return "Error, Not found", 404
     id = rv[0].get("id")
@@ -207,7 +207,7 @@ def vote(motion):
     v = request.form.get("vote", "abstain")
     db = get_db()
     with db.xact():
-        rv = db.prepare("SELECT id, type FROM motion WHERE identifier=$1 AND host=$2")(motion, host);
+        rv = db.prepare("SELECT id, type FROM motion WHERE identifier=$1 AND host=$2")(motion, request.host);
         if len(rv) == 0:
             return "Error, Not found", 404
         if not may("vote", rv[0].get("type")):
@@ -216,8 +216,8 @@ def vote(motion):
         id = rv[0].get("id")
         if not p(motion, request.host)[0][0]:
             return "Error, motion deadline has passed", 500
-        p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2 AND host=$3")
-        rv = p(id, g.voter, request.host)
+        p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2")
+        rv = p(id, g.voter)
         if len(rv) == 0:
             db.prepare("INSERT INTO vote(motion_id, voter_id, result) VALUES($1,$2,$3)")(id, g.voter, v)
         else:
