@@ -10,7 +10,7 @@ User: {{g.user}}
 <form action="/motion" method="POST" class="form-inline">
 <div class="motion card">
   <div class="motion-title card-heading alert-light from-group">
-    <input class="form-control motion-title-input" placeholder="Motion title" type="text" name="title" id="title">
+    <input class="form-control motion-title-input" placeholder="Motion title" type="text" name="title" id="title" required="yes">
     {%- if categories|length == 1 %}
     <input type="text" class="float form-control" maxwidth="10" disabled value="{{categories[0]}}">
     <input type="hidden" name="category" value="{{categories[0]}}">

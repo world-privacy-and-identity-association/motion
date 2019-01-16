@@ -416,8 +416,24 @@ class CreateMotionTests(BasicTest):
         title='My Motion'
         content='My body'
         response = self.createMotion(user, title, content, '21', 'group1')
-        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.status_code, 400)
         self.assertIn(str.encode('Error, invalid length'), response.data)
+
+    def test_createMotionMissingData(self):
+        title=''
+        content=''
+        response = self.createMotion(user, title, content, '3', 'group1')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, missing title'), response.data)
+        title='New Motion'
+        response = self.createMotion(user, title, content, '3', 'group1')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, missing content'), response.data)
+        title=''
+        content='New Content'
+        response = self.createMotion(user, title, content, '3', 'group1')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, missing title'), response.data)
 
     def test_createMotionWrongGroup(self):
         title='My Motion'
