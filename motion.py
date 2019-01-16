@@ -2,10 +2,12 @@ from flask import g
 from flask import Flask
 from flask import render_template, redirect
 from flask import request
+from functools import wraps
 import postgresql
 import filters
 from flaskext.markdown import Markdown
 from markdown.extensions import Extension
+from datetime import date, time, datetime
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -62,7 +64,6 @@ def lookup_user():
     if "USER" in env and "ROLES" in env:
         user = env.get("USER")
         roles = env.get("ROLES")
-
 
     if user is None:
         return "Server misconfigured", 500
@@ -203,18 +204,36 @@ def put_motion():
 
 def motion_edited(motion):
     return rel_redirect("/?start=" + str(motion) + "#motion-" + str(motion))
+    
 
-@app.route("/motion/<string:motion>/cancel", methods=['POST'])
-def cancel_motion(motion):
-    rv = get_db().prepare("SELECT id, type FROM motion WHERE identifier=$1 AND host=$2")(motion, request.host);
+def validate_access(data):
+    rv = get_db().prepare("SELECT id, type, deadline, canceled FROM motion WHERE identifier=$1 AND host=$2")(data[0], data[1]);
     if len(rv) == 0:
         return "Error, Not found", 404
     id = rv[0].get("id")
-    if not may("cancel", rv[0].get("type")):
+    if not may(data[2], rv[0].get("type")):
         return "Forbidden", 403
+    if rv[0].get("deadline") < datetime.now() or rv[0].get("canceled") is not None:
+        return "Error, out of time", 403
+    return id
+
+    
+@app.route("/motion/<string:motion>/cancel", methods=['POST'])
+def cancel_motion(motion):
+    id = validate_access([motion, request.host, 'cancel'])
+    if not isinstance(id, int):
+        return id[0], id[1]
     if request.form.get("reason", "none") == "none":
         return "Error, form requires reason", 500
     rv = get_db().prepare("UPDATE motion SET canceled=CURRENT_TIMESTAMP, cancelation_reason=$1, canceled_by=$2 WHERE identifier=$3 AND host=$4 AND canceled is NULL")(request.form.get("reason", ""), g.voter, motion, request.host)
+    return motion_edited(id)
+
+@app.route("/motion/<string:motion>/finish", methods=['POST'])
+def finish_motion(motion):
+    id = validate_access([motion, request.host, 'finish'])
+    if not isinstance(id, int):
+        return id[0], id[1]
+    rv = get_db().prepare("UPDATE motion SET deadline=CURRENT_TIMESTAMP WHERE identifier=$1 AND host=$2 AND canceled is NULL")(motion, request.host)
     return motion_edited(id)
 
 @app.route("/motion/<string:motion>")
@@ -230,7 +249,7 @@ def show_motion(motion):
     votes = None
     if may("audit", rv[0].get("type")) and not rv[0].get("running") and not rv[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(rv[0].get("id"));
-    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), votes=votes, singlemotion=True)
+    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), may_finish=may("finish", rv[0].get("type")), votes=votes, singlemotion=True)
 
 @app.route("/motion/<string:motion>/vote", methods=['POST'])
 def vote(motion):

@@ -33,6 +33,18 @@ python -m unittest tests/test_motion.py
 
 The database schema is automatically installed when the table "schema_version" does not exist and the application is started.
 
+The following user rights can be granted:
+- create: user is able to create a new motion
+- vote: user is able to vote running motions
+- cancel: user is able to cancel a running motion
+- finish: user is able to close a running motion
+- audit: user is able to see given votes of a finished motion
+
+To grant right use the following (here with vote right as example): 
+- on all groups add "vote:*"
+- on one given group add "vote:group1"
+- on two given groups add "vote:group1 vote:group2"
+
 # Usage
 
 Within the motion content markdown can be used for formatting e.g. 

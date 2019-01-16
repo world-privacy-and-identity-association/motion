@@ -27,7 +27,12 @@ Motion: {{motion.name}}
 {%- if may_cancel %}
 <form action="/motion/{{motion.identifier}}/cancel" method="POST" class="form-inline">
 <input type="text" placeholder="cancelation reason" name="reason" class="form-control" required="yes">
-<button type="submit" class="btn btn-danger">Cancel</button>
+<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">Cancel</button></br>
+</form>
+{%- endif %}
+{%- if may_finish %}
+<form action="/motion/{{motion.identifier}}/finish" method="POST" class="form-inline">
+<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">Finish</button></br>
 </form>
 {%- endif %}
 {%- endif %}
