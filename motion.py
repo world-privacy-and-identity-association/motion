@@ -5,8 +5,6 @@ from flask import request
 import postgresql
 import filters
 
-times=[3,5,14]
-
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -21,6 +19,8 @@ app.register_blueprint(filters.blueprint)
 app.config.from_pyfile('config.py')
 
 prefix=app.config.get("GROUP_PREFIX")
+
+times=app.config.get("DURATION")
 
 @app.before_request
 def lookup_user():
@@ -145,7 +145,7 @@ def main():
             prev = rs[9][0]
         else:
             prev = -1
-    return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times, prev=prev,
+    return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times[request.host], prev=prev,
                            categories=get_allowed_cats("create"))
 
 def rel_redirect(loc):
@@ -159,7 +159,7 @@ def put_motion():
     if cat not in get_allowed_cats("create"):
         return "Forbidden", 403
     time = int(request.form.get("days", "3"));
-    if time not in times:
+    if time not in times[request.host]:
         return "Error, invalid length", 500
     db = get_db()
     with db.xact():
