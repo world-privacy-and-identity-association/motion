@@ -22,12 +22,19 @@ prefix=app.config.get("GROUP_PREFIX")
 
 times=app.config.get("DURATION")
 
+debuguser=app.config.get("DEBUGUSER")
+
 @app.before_request
 def lookup_user():
     global prefix
 
     env = request.environ
     user = None
+    if debuguser is not None:
+        parts =debuguser[request.host].split("/", 1)
+        user = parts[0]
+        roles = parts[1]
+
     if "USER_ROLES" in env:
         parts = env.get("USER_ROLES").split("/", 1)
         user = parts[0]
