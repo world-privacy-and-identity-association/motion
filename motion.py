@@ -53,6 +53,8 @@ prefix = ConfigProxy("GROUP_PREFIX")
 times = ConfigProxy("DURATION")
 debuguser = ConfigProxy("DEBUGUSER")
 
+max_proxy=app.config.get("MAX_PROXY")
+
 @app.before_request
 def lookup_user():
     global prefix
@@ -88,6 +90,17 @@ def lookup_user():
             db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(user)
             rv = db.prepare("SELECT id FROM voter WHERE email=$1")(user)
         g.voter = rv[0].get("id");
+        rv = db.prepare("SELECT email FROM voter, proxy WHERE proxy.proxy_id = voter.id AND proxy.revoked IS NULL AND proxy.voter_id = $1 ")(g.voter)
+        if len(rv) != 0:
+            g.proxies_given = rv[0].get("email")
+        rv = db.prepare("SELECT email FROM voter, proxy WHERE proxy.voter_id = voter.id AND proxy.revoked IS NULL AND proxy.proxy_id = $1 ")(g.voter)
+        if len(rv) != 0:
+            sep = ""
+            g.proxies_received = ""
+            for x in range(0, len(rv)):
+                g.proxies_received += sep + rv[x].get("email")
+                sep =", "
+
     g.user = user
     g.roles = {}
 
@@ -101,6 +114,7 @@ def lookup_user():
                 g.roles[a[0]] = [group for group in prefix.per_host]
             else:
                 g.roles[a[0]].append(val)
+
     return None
 
 @app.context_processor
@@ -125,6 +139,17 @@ def get_allowed_cats(action):
 
 def may(action, motion):
     return motion in get_allowed_cats(action)
+
+def may_admin(action):
+    return action in g.roles
+
+def get_voters():
+    rv = get_db().prepare("SELECT email FROM voter")
+    return rv
+
+def get_all_proxies():
+    rv = get_db().prepare("SELECT p.id as id, v1.email as voter_email, v1.id as voterid, v2.email as proxy_email, v2.id as proxyid FROM voter AS v1, voter AS v2, proxy AS p WHERE v2.id = p.proxy_id AND v1.id = p.voter_id AND p.revoked is NULL ORDER BY voter_email, proxy_email")
+    return rv
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -175,7 +200,13 @@ def init_db():
                 db.prepare("ALTER TABLE \"motion\" ALTER COLUMN \"host\" SET NOT NULL")()
                 db.prepare("UPDATE \"schema_version\" SET \"version\"=3")()
 
+        if ver < 4:
+            with app.open_resource('sql/from_3.sql', mode='r') as f:
+                db.execute(f.read())
+                db.prepare("UPDATE \"schema_version\" SET \"version\"=4")()
+
 init_db()
+
 
 @app.route("/")
 def main():
@@ -200,7 +231,7 @@ def main():
         else:
             prev = -1
     return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times.per_host, prev=prev,
-                           categories=get_allowed_cats("create"), singlemotion=False)
+                           categories=get_allowed_cats("create"), singlemotion=False, may_proxyadmin=may_admin("proxyadmin"))
 
 def rel_redirect(loc):
     r = redirect(loc)
@@ -288,7 +319,7 @@ def show_motion(motion):
     votes = None
     if may("audit", rv[0].get("type")) and not rv[0].get("running") and not rv[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(rv[0].get("id"));
-    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), may_finish=may("finish", rv[0].get("type")), votes=votes, singlemotion=True)
+    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), may_finish=may("finish", rv[0].get("type")), votes=votes, singlemotion=True, may_proxyadmin=may_admin("proxyadmin"))
 
 @app.route("/motion/<string:motion>/vote", methods=['POST'])
 @validate_motion_access('vote')
@@ -302,3 +333,51 @@ def vote(motion, id):
     else:
         db.prepare("UPDATE vote SET result=$3, entered=CURRENT_TIMESTAMP WHERE motion_id=$1 AND voter_id = $2")(id, g.voter, v)
     return motion_edited(id)
+
+@app.route("/proxy")
+def proxy():
+    if not may_admin("proxyadmin"):
+        return "Forbidden", 403
+    return render_template('proxy.html', voters=get_voters(), proxies=get_all_proxies(), may_proxyadmin=may_admin("proxyadmin"))
+
+@app.route("/proxy/add", methods=['POST'])
+def add_proxy():
+    if not may_admin("proxyadmin"):
+        return "Forbidden", 403
+    voter=request.form.get("voter", "")
+    proxy=request.form.get("proxy", "")
+    if voter == proxy :
+        return "Error, voter equals proxy.", 400
+    rv = get_db().prepare("SELECT id FROM voter WHERE email=$1")(voter);
+    if len(rv) == 0:
+        return "Error, voter not found.", 400
+    voterid = rv[0].get("id")
+    rv = get_db().prepare("SELECT id FROM voter WHERE email=$1")(proxy);
+    if len(rv) == 0:
+        return "Error, proxy not found.", 400
+    proxyid = rv[0].get("id")
+    rv = get_db().prepare("SELECT id FROM proxy WHERE voter_id=$1 AND revoked is NULL")(voterid);
+    if len(rv) != 0:
+        return "Error, proxy allready given.", 400
+    rv = get_db().prepare("SELECT COUNT(id) as c FROM proxy WHERE proxy_id=$1 AND revoked is NULL GROUP BY proxy_id")(proxyid);
+    if len(rv) != 0:
+        if rv[0].get("c") >= max_proxy:
+            return "Error, Max proxy for '" + proxy + "' reached.", 400
+    rv = get_db().prepare("INSERT INTO proxy(voter_id, proxy_id, granted_by) VALUES ($1,$2,$3)")(voterid, proxyid, g.voter)
+    return rel_redirect("/proxy")
+
+@app.route("/proxy/revoke", methods=['POST'])
+def revoke_proxy():
+    if not may_admin("proxyadmin"):
+        return "Forbidden", 403
+    id=request.form.get("id", "")
+    rv = get_db().prepare("UPDATE proxy SET revoked=CURRENT_TIMESTAMP, revoked_by=$1 WHERE id=$2")(g.voter, int(id))
+    return rel_redirect("/proxy")
+
+@app.route("/proxy/revokeall", methods=['POST'])
+def revoke_proxy_all():
+    if not may_admin("proxyadmin"):
+        return "Forbidden", 403
+    rv = get_db().prepare("UPDATE proxy SET revoked=CURRENT_TIMESTAMP, revoked_by=$1 WHERE revoked IS NULL")(g.voter)
+    return rel_redirect("/proxy")
+

@@ -1,4 +1,4 @@
--- sample data for scheme version 3
+-- sample data for scheme version 4
 INSERT INTO voter (id,email) VALUES (1, 'User A');
 INSERT INTO voter (id,email) VALUES (2, 'User B');
 INSERT INTO voter (id,email) VALUES (3, 'User C');

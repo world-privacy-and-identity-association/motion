@@ -13,6 +13,8 @@ DEFAULT_HOST="hostname for migration from db version < 2"
 
 GROUP_PREFIX={'hostname': {'group1': 'g1', 'group2': 'g2'}} # motion types and their id-prefixes
 
+MAX_PROXY=2  # user is allowed to hold up to MAX_PROXY votes
+
 DURATION={'hostname':[3, 7, 14]} # duration period for motions
 
 #DEBUGUSER={'hostname':'username/create:* vote:*'} # remove # at beginning of line to use local debuguser

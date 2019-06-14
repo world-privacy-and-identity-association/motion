@@ -39,6 +39,7 @@ The following user rights can be granted:
 - cancel: user is able to cancel a running motion
 - finish: user is able to close a running motion
 - audit: user is able to see given votes of a finished motion
+- proxyadmin: user is able to grant proxy rights for users
 
 To grant right use the following (here with vote right as example):
 - on all groups add "vote:*"

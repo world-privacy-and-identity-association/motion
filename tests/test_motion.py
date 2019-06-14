@@ -9,7 +9,8 @@ app.config.update(
     DEBUGUSER = {},
     GROUP_PREFIX = {'127.0.0.1:5000': {'group1': 'g1', 'group2': 'g2'}},
     DURATION = {'127.0.0.1:5000':[3, 7, 14]},
-    SERVER_NAME = '127.0.0.1:5000'
+    SERVER_NAME = '127.0.0.1:5000',
+    MAX_PROXY=2
 )
 
 app.config['TESTING'] = True
@@ -52,6 +53,20 @@ class BasicTest(TestCase):
         return self.app.post(
             '/motion/' + motion +'/finish',
             environ_base={'USER_ROLES': user}
+        )
+
+    def addProxy(self, user, voter, proxy):
+        return self.app.post(
+            '/proxy/add',
+            environ_base={'USER_ROLES': user},
+            data=dict(voter=voter, proxy=proxy)
+        )
+
+    def revokeProxy(self, user, id):
+        return self.app.post(
+            '/proxy/revoke',
+            environ_base={'USER_ROLES': user},
+            data=dict(id=id)
         )
 
     def buildResultText(self, motiontext, yes, no, abstain):
@@ -126,6 +141,8 @@ class GeneralTests(BasicTest):
             + '\nNo <span class=\"badge badge-pill badge-secondary\">1</span><br>'\
             + '\nAbstain <span class=\"badge badge-pill badge-secondary\">0</span><br>\n    </p>\n  </div>\n</div>\n</div>'
         self.assertIn(str.encode(testtext), result.data)
+        testtext= 'Proxy management'
+        self.assertNotIn(str.encode(testtext), result.data)
 
         # start with second motion
         result = self.app.get('/', environ_base={'USER_ROLES': user}, query_string=dict(start=2))
@@ -169,7 +186,26 @@ class GeneralTests(BasicTest):
         self.assertEqual(result.status_code, 404)
         self.assertIn(str.encode('Error, Not found'), result.data)
 
+    def test_no_proxy(self):
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        self.assertEqual(result.status_code, 403)
+        self.assertIn(str.encode('Forbidden'), result.data)
 
+    def test_no_proxy_add(self):
+        result = self.app.post('proxy/add', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        self.assertEqual(result.status_code, 403)
+        self.assertIn(str.encode('Forbidden'), result.data)
+
+    def test_no_proxy_revoke(self):
+        result = self.app.post('proxy/revoke', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        self.assertEqual(result.status_code, 403)
+        self.assertIn(str.encode('Forbidden'), result.data)
+
+    def test_no_proxy_revokeAll(self):
+        result = self.app.post('proxy/revokeall', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        self.assertEqual(result.status_code, 403)
+        self.assertIn(str.encode('Forbidden'), result.data)
+        
 class VoterTests(BasicTest):
 
     def setUp(self):
@@ -515,6 +551,216 @@ class AuditMotionTests(BasicTest):
         testtext= '<div class="motion card" id="votes">\n  <div class="card-heading text-white bg-info">\n    Motion Votes\n  </div>'\
             + '\n  <div class="card-body">\n    <div>User A: yes</div>\n    <div>User B: no</div>'\
             + '\n    <div>User C: no</div>\n  </div>\n</div>\n<a href="/?start=2#motion-2" class="btn btn-primary">Back</a>'
+        self.assertIn(str.encode(testtext), result.data)
+
+class ProxyManagementTests(BasicTest):
+
+    def setUp(self):
+        self.init_test()
+        global user
+        user='testuser/proxyadmin:*'
+        self.db_sampledata()
+
+    def tearDown(self):
+        pass
+
+    def test_see_proxy(self):
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= 'div class="container">\n<form action="/proxy/add" method="POST">'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'proxy granted to:'
+        self.assertNotIn(str.encode(testtext), result.data)
+        testtext= 'holds proxy of:'
+        self.assertNotIn(str.encode(testtext), result.data)
+        testtext= '<select class="float form-control" name="voter">\n        '\
+            + '<option>User A</option>\n        <option>User B</option>\n        '\
+            + '<option>User C</option>\n        '\
+            + '<option>testuser</option>\n      '\
+            + '</select>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= '<select class="float form-control" name="proxy">\n          '\
+            + '<option>User A</option>\n          '\
+            + '<option>User B</option>\n          '\
+            + '<option>User C</option>\n          '\
+            + '<option>testuser</option>\n      '\
+            + '</select>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n    '\
+            + '</table>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= '<a class="nav-link" href="/proxy">Proxy management</a>'
+        self.assertIn(str.encode(testtext), result.data)
+
+    def test_add_proxy(self):
+        voter=''
+        proxy=''
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, voter equals proxy.'), response.data)
+
+        voter='User A'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, proxy not found.'), response.data)
+
+        voter='User Z'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, voter not found.'), response.data)
+
+        voter=''
+        proxy='User B'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, voter not found.'), response.data)
+
+        voter='User B'
+        proxy='User B'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, voter equals proxy.'), response.data)
+
+        voter='User A'
+        proxy='User B'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<form action="/proxy/revoke" method="POST">'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        '\
+            + '<th>Proxy</th>\n        <th></th>\n      </thead>\n      '\
+            + '<tr>\n        <td>User A</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="1">Revoke</button></td>\n      '\
+            + '</tr>\n    </table>\n'
+        self.assertIn(str.encode(testtext), result.data)
+
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, proxy allready given.'), response.data)
+
+        voter='User A'
+        proxy='User C'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, proxy allready given.'), response.data)
+
+        voter='User C'
+        proxy='User B'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        '\
+            + '<th>Proxy</th>\n        <th></th>\n      </thead>\n      '\
+            + '<tr>\n        <td>User A</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="1">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User C</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="2">Revoke</button></td>\n      '\
+            + '</tr>\n    </table>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'proxy granted to:'
+        self.assertNotIn(str.encode(testtext), result.data)
+        testtext= 'holds proxy of:'
+        self.assertNotIn(str.encode(testtext), result.data)
+
+        voter='testuser'
+        proxy='User B'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, Max proxy for \'User B\' reached.'), response.data)
+        
+        voter='testuser'
+        proxy='User A'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n      '\
+            + '<tr>\n        <td>testuser</td>\n        <td>User A</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="3">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User A</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="1">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User C</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="2">Revoke</button></td>\n      '\
+            + '</tr>\n    </table>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'proxy granted to: User A\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'holds proxy of:'
+        self.assertNotIn(str.encode(testtext), result.data)
+
+        voter='User B'
+        proxy='testuser'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n      '\
+            + '<tr>\n        <td>testuser</td>\n        <td>User A</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="3">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User A</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="1">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User B</td>\n        <td>testuser</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="4">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User C</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="2">Revoke</button></td>\n      '\
+            + '</tr>\n    </table>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'proxy granted to: User A\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'holds proxy of: User B\n'
+        self.assertIn(str.encode(testtext), result.data)
+
+        response = self.revokeProxy(user, 4)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n      '\
+            + '<tr>\n        <td>testuser</td>\n        <td>User A</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="3">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User A</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="1">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User C</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="2">Revoke</button></td>\n      '\
+            + '</tr>\n    </table>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'proxy granted to: User A\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'holds proxy of:'
+        self.assertNotIn(str.encode(testtext), result.data)
+
+        response = self.revokeProxy(user, 3)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n      '\
+            + '<tr>\n        <td>User A</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="1">Revoke</button></td>\n      </tr>\n      '\
+            + '<tr>\n        <td>User C</td>\n        <td>User B</td>\n        '\
+            + '<td><button type="submit" class="btn btn-danger" name="id" value="2">Revoke</button></td>\n      '\
+            + '</tr>\n    </table>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= 'proxy granted to:'
+        self.assertNotIn(str.encode(testtext), result.data)
+        testtext= 'holds proxy of:'
+        self.assertNotIn(str.encode(testtext), result.data)
+
+        result = self.app.post('proxy/revokeall', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<table>\n      '\
+            + '<thead>\n        '\
+            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n    '\
+            + '</table>\n'
         self.assertIn(str.encode(testtext), result.data)
 
 
