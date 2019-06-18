@@ -37,6 +37,7 @@ def lookup_user():
         user = env.get("USER")
         roles = env.get("ROLES")
 
+
     if user is None:
         return "Server misconfigured", 500
     roles = roles.split(" ")
@@ -56,13 +57,14 @@ def lookup_user():
 
     for r in roles:
         a = r.split(":", 1)
-        val = a[1]
-        if a[0] not in g.roles:
-            g.roles[a[0]] = []
-        if val == "*":
-            g.roles[a[0]] = [group for group in prefix[request.host]]
-        else:
-            g.roles[a[0]].append(val)
+        if len(r)!=0:
+            val = a[1]
+            if a[0] not in g.roles:
+                g.roles[a[0]] = []
+            if val == "*":
+                g.roles[a[0]] = [group for group in prefix[request.host]]
+            else:
+                g.roles[a[0]].append(val)
     return None
 
 def get_allowed_cats(action):
