@@ -90,10 +90,11 @@ def lookup_user():
             db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(user)
             rv = db.prepare("SELECT id FROM voter WHERE email=$1")(user)
         g.voter = rv[0].get("id");
-        rv = db.prepare("SELECT email FROM voter, proxy WHERE proxy.proxy_id = voter.id AND proxy.revoked IS NULL AND proxy.voter_id = $1 ")(g.voter)
+        g.proxies_given = ""
+        rv = db.prepare("SELECT email, voter_id FROM voter, proxy WHERE proxy.proxy_id = voter.id AND proxy.revoked IS NULL AND proxy.voter_id = $1 ")(g.voter)
         if len(rv) != 0:
             g.proxies_given = rv[0].get("email")
-        rv = db.prepare("SELECT email FROM voter, proxy WHERE proxy.voter_id = voter.id AND proxy.revoked IS NULL AND proxy.proxy_id = $1 ")(g.voter)
+        rv = db.prepare("SELECT email, voter_id FROM voter, proxy WHERE proxy.voter_id = voter.id AND proxy.revoked IS NULL AND proxy.proxy_id = $1 ")(g.voter)
         if len(rv) != 0:
             sep = ""
             g.proxies_received = ""
@@ -205,6 +206,11 @@ def init_db():
                 db.execute(f.read())
                 db.prepare("UPDATE \"schema_version\" SET \"version\"=4")()
 
+        if ver < 5:
+            with app.open_resource('sql/from_4.sql', mode='r') as f:
+                db.execute(f.read())
+                db.prepare("UPDATE \"schema_version\" SET \"version\"=5")()
+
 init_db()
 
 
@@ -270,7 +276,7 @@ def put_motion():
     return rel_redirect("/")
 
 def motion_edited(motion):
-    return rel_redirect("/?start=" + str(motion) + "#motion-" + str(motion))
+    return rel_redirect("/motion/" + motion)
 
 def validate_motion_access(privilege):
     def decorator(f):
@@ -292,19 +298,28 @@ def validate_motion_access(privilege):
         return decorated_function
     return decorator
     
+def validate_motion_access_vote(privilege):
+    simple_decorator = validate_motion_access(privilege)
+    def decorator(f):
+        def decorated_function(motion, voter):
+            return simple_decorator(lambda motion, id : f(motion, voter, id))(motion)
+        decorated_function.__name__ = f.__name__
+        return decorated_function
+    return decorator
+
 @app.route("/motion/<string:motion>/cancel", methods=['POST'])
 @validate_motion_access('cancel')
 def cancel_motion(motion, id):
     if request.form.get("reason", "none") == "none":
         return "Error, form requires reason", 500
     rv = get_db().prepare("UPDATE motion SET canceled=CURRENT_TIMESTAMP, cancelation_reason=$1, canceled_by=$2 WHERE identifier=$3 AND host=$4 AND canceled is NULL")(request.form.get("reason", ""), g.voter, motion, request.host)
-    return motion_edited(id)
+    return motion_edited(motion)
 
 @app.route("/motion/<string:motion>/finish", methods=['POST'])
 @validate_motion_access('finish')
 def finish_motion(motion, id):
     rv = get_db().prepare("UPDATE motion SET deadline=CURRENT_TIMESTAMP WHERE identifier=$1 AND host=$2 AND canceled is NULL")(motion, request.host)
-    return motion_edited(id)
+    return motion_edited(motion)
 
 @app.route("/motion/<string:motion>")
 def show_motion(motion):
@@ -313,26 +328,46 @@ def show_motion(motion):
                          + "LEFT JOIN voter poser ON poser.id = motion.posed_by "\
                          + "LEFT JOIN voter canceler ON canceler.id = motion.canceled_by "
                          + "WHERE motion.identifier=$1 AND motion.host=$3")
-    rv = p(motion, g.voter, request.host)
-    if len(rv) == 0:
+    resultmotion = p(motion, g.voter, request.host)
+    if len(resultmotion) == 0:
         return "Error, Not found", 404
-    votes = None
-    if may("audit", rv[0].get("type")) and not rv[0].get("running") and not rv[0].get("canceled"):
-        votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(rv[0].get("id"));
-    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), may_finish=may("finish", rv[0].get("type")), votes=votes, singlemotion=True, may_proxyadmin=may_admin("proxyadmin"))
 
-@app.route("/motion/<string:motion>/vote", methods=['POST'])
-@validate_motion_access('vote')
-def vote(motion, id):
+    p = get_db().prepare("SELECT voter.email FROM vote INNER JOIN voter ON vote.proxy_id = voter.id WHERE vote.motion_id=$1 AND vote.voter_id=$2 AND vote.proxy_id <> vote.voter_id")
+    resultproxyname = p(resultmotion[0][0], g.voter)
+
+    p = get_db().prepare("SELECT v.result, proxy.voter_id, voter.email, CASE WHEN proxy.proxy_id = v.proxy_id THEN NULL ELSE voter.email END AS owneremail FROM proxy LEFT JOIN "\
+                          + "(SELECT vote.voter_id, vote.result, vote.proxy_id FROM vote "\
+                          + "WHERE vote.motion_id=$1) AS v ON proxy.voter_id = v.voter_id "\
+                          + "LEFT JOIN voter ON proxy.voter_id = voter.id "\
+                          + "WHERE proxy.proxy_id=$2 AND proxy.revoked IS NULL")
+    resultproxyvote = p(resultmotion[0][0], g.voter)
+
+    votes = None
+    if may("audit", resultmotion[0].get("type")) and not resultmotion[0].get("running") and not resultmotion[0].get("canceled"):
+        votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(resultmotion[0].get("id"));
+        votes = get_db().prepare("SELECT vote.result, voter.email, CASE voter.email WHEN proxy.email THEN NULL ELSE proxy.email END as proxyemail FROM vote INNER JOIN voter ON voter.id = vote.voter_id INNER JOIN voter as proxy ON proxy.id = vote.proxy_id WHERE vote.motion_id=$1")(resultmotion[0].get("id"));
+    return render_template('single_motion.html', motion=resultmotion[0], may_vote=may("vote", resultmotion[0].get("type")), may_cancel=may("cancel", resultmotion[0].get("type")), votes=votes, proxyvote=resultproxyvote, proxyname=resultproxyname)
+
+@app.route("/motion/<string:motion>/vote/<string:voter>", methods=['POST'])
+@validate_motion_access_vote('vote')
+def vote(motion, voter, id):
     v = request.form.get("vote", "abstain")
+    voterid=int(voter)
     db = get_db()
+
+    # test if voter is proxy
+    if (voterid != g.voter):
+        rv = db.prepare("SELECT voter_id FROM proxy WHERE proxy.revoked IS NULL AND proxy.proxy_id = $1 AND proxy.voter_id = $2")(g.voter, voterid);
+        if len(rv) == 0:
+            return "Error, proxy not found.", 400
+
     p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2")
-    rv = p(id, g.voter)
+    rv = p(id, voterid)
     if len(rv) == 0:
-        db.prepare("INSERT INTO vote(motion_id, voter_id, result) VALUES($1,$2,$3)")(id, g.voter, v)
+        db.prepare("INSERT INTO vote(motion_id, voter_id, result, proxy_id) VALUES($1,$2,$3,$4)")(id, voterid, v, g.voter)
     else:
-        db.prepare("UPDATE vote SET result=$3, entered=CURRENT_TIMESTAMP WHERE motion_id=$1 AND voter_id = $2")(id, g.voter, v)
-    return motion_edited(id)
+        db.prepare("UPDATE vote SET result=$3, entered=CURRENT_TIMESTAMP, proxy_id=$4 WHERE motion_id=$1 AND voter_id = $2")(id, voterid, v, g.voter)
+    return motion_edited(motion)
 
 @app.route("/proxy")
 def proxy():

@@ -25,6 +25,7 @@ CREATE TABLE vote (motion_id INTEGER NOT NULL,
                  voter_id INTEGER NOT NULL,
                  result vote_type NOT NULL,
                  entered timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                 proxy_id INTEGER NOT NULL,
                  PRIMARY KEY(motion_id, voter_id));
 
 DROP TABLE IF EXISTS proxy;
@@ -41,4 +42,4 @@ CREATE INDEX proxy_proxy ON proxy (proxy_id);
 
 DROP TABLE IF EXISTS schema_version;
 CREATE TABLE schema_version (version INTEGER NOT NULL);
-INSERT INTO schema_version(version) VALUES(4);
+INSERT INTO schema_version(version) VALUES(5);

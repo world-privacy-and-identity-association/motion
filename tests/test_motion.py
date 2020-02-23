@@ -27,9 +27,9 @@ class BasicTest(TestCase):
         self.db_clear()
 
     # functions to manipulate motions
-    def createVote(self, user, motion, vote):
+    def createVote(self, user, motion, vote, voter):
         return self.app.post(
-            '/motion/' + motion +'/vote',
+            '/motion/' + motion + '/vote/' + str(voter),
             environ_base={'USER_ROLES': user},
             data=dict(vote=vote)
         )
@@ -93,6 +93,8 @@ class GeneralTests(BasicTest):
         self.init_test()
         global user
         user = 'testuser/'
+        global userid
+        userid = 4
         self.db_sampledata()
 
     def tearDown(self):
@@ -161,7 +163,7 @@ class GeneralTests(BasicTest):
 
     def test_vote(self):
         motion='g1.20200402.004'
-        response = self.createVote(user, motion, 'yes')
+        response = self.createVote(user, motion, 'yes', userid)
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Forbidden'), response.data)
 
@@ -212,6 +214,8 @@ class VoterTests(BasicTest):
         self.init_test()
         global user
         user='testuser/vote:*'
+        global userid
+        userid = 4
         self.db_sampledata()
 
     def tearDown(self):
@@ -227,7 +231,7 @@ class VoterTests(BasicTest):
 
     def test_vote_yes(self):
         motion='g1.20200402.004'
-        response = self.createVote(user, motion, 'yes')
+        response = self.createVote(user, motion, 'yes', userid)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 1, 0, 0)
@@ -241,7 +245,7 @@ class VoterTests(BasicTest):
 
     def test_vote_no(self):
         motion='g1.20200402.004'
-        response = self.createVote(user, motion, 'no')
+        response = self.createVote(user, motion, 'no', userid)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 0, 1, 0)
@@ -256,7 +260,7 @@ class VoterTests(BasicTest):
 
     def test_vote_abstain(self):
         motion='g1.20200402.004'
-        response = self.createVote(user, motion, 'abstain')
+        response = self.createVote(user, motion, 'abstain', userid)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 0, 0, 1)
@@ -271,17 +275,17 @@ class VoterTests(BasicTest):
 
     def test_vote_change(self):
         motion='g1.20200402.004'
-        response = self.createVote(user, motion, 'yes')
+        response = self.createVote(user, motion, 'yes', userid)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 1, 0, 0)
         self.assertIn(str.encode(resulttext), result.data)
-        response = self.createVote(user, motion, 'no')
+        response = self.createVote(user, motion, 'no', userid)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 0, 1, 0)
         self.assertIn(str.encode(resulttext), result.data)
-        response = self.createVote(user, motion, 'abstain')
+        response = self.createVote(user, motion, 'abstain', userid)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 0, 0, 1)
@@ -289,41 +293,41 @@ class VoterTests(BasicTest):
 
     def test_vote_group(self):
         motion='g1.20200402.004'
-        response = self.createVote(user, motion, 'yes')
+        response = self.createVote(user, motion, 'yes', userid)
         self.assertEqual(response.status_code, 302)
 
         motion='g1.20200402.004'
         user1='testuser/vote:group1'
-        response = self.createVote(user1, motion, 'yes')
+        response = self.createVote(user1, motion, 'yes', userid)
         self.assertEqual(response.status_code, 302)
 
         motion='g1.20200402.004'
         user1='testuser/vote:group1 vote:group2'
-        response = self.createVote(user1, motion, 'yes')
+        response = self.createVote(user1, motion, 'yes', userid)
         self.assertEqual(response.status_code, 302)
 
     def test_vote_wrong_group(self):
         motion='g1.20200402.004'
         user1='testuser/vote:group2'
-        response = self.createVote(user1, motion, 'yes')
+        response = self.createVote(user1, motion, 'yes', userid)
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Forbidden'), response.data)
 
     def test_vote_closed(self):
         motion='g1.20200402.002'
-        response = self.createVote(user, motion, 'abstain')
+        response = self.createVote(user, motion, 'abstain', userid)
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Error, out of time'), response.data)
 
     def test_vote_canceled(self):
         motion='g1.20200402.003'
-        response = self.createVote(user, motion, 'abstain')
+        response = self.createVote(user, motion, 'abstain', userid)
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Error, motion was canceled'), response.data)
 
     def test_vote_not_given(self):
         motion='g1.30190402.001'
-        response = self.createVote(user, motion, 'abstain')
+        response = self.createVote(user, motion, 'abstain', userid)
         self.assertEqual(response.status_code, 404)
         self.assertIn(str.encode('Error, Not found'), response.data)
 
@@ -718,7 +722,7 @@ class ProxyManagementTests(BasicTest):
         testtext= 'holds proxy of: User B\n'
         self.assertIn(str.encode(testtext), result.data)
 
-        response = self.revokeProxy(user, 4)
+        response = self.revokeProxy(user, userid)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
         testtext= '<table>\n      '\
@@ -762,6 +766,103 @@ class ProxyManagementTests(BasicTest):
             + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n    '\
             + '</table>\n'
         self.assertIn(str.encode(testtext), result.data)
+
+class ProxyVoteTests(BasicTest):
+
+    def setUp(self):
+        self.init_test()
+        global user
+        user='testuser/vote:* proxyadmin:*'
+        self.db_sampledata()
+
+    def tearDown(self):
+        pass
+
+    def test_proxy_vote(self):
+        voter='testuser'
+        proxy='User B'
+        proxyid=2
+        proxyuser='User B/vote:*'
+
+        response = self.addProxy(user, proxy, voter)
+        self.assertEqual(response.status_code, 302)
+
+        motion='g1.20200402.004'
+        response = self.createVote(user, motion, 'yes', proxyid)
+        self.assertEqual(response.status_code, 302)
+
+        # testuser view
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
+        # own vote without change
+        testtext= '<form action="/motion/g1.20200402.004/vote/4" method="POST">\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="yes" id="vote-yes">yes</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">no</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>'
+        self.assertIn(str.encode(testtext), result.data)
+        # proxy vote with change
+        testtext= '<form action="/motion/g1.20200402.004/vote/2" method="POST">\n'\
+            + '<button type="submit" class="btn btn-success" name="vote" value="yes" id="vote-yes">yes</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">no</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        
+        # User B view
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': proxyuser}, follow_redirects=True)
+        # own vote without change
+        testtext= '<h3>My vote</h3>\nGiven by testuser\n'\
+            + '<form action="/motion/g1.20200402.004/vote/2" method="POST">\n'\
+            + '<button type="submit" class="btn btn-success" name="vote" value="yes" id="vote-yes">yes</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">no</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>'
+        self.assertIn(str.encode(testtext), result.data)
+        
+        # change vote
+        response = self.createVote(user, motion, 'no', proxyid)
+        self.assertEqual(response.status_code, 302)
+
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<form action="/motion/g1.20200402.004/vote/2" method="POST">\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="yes" id="vote-yes">yes</button>\n'\
+            + '<button type="submit" class="btn btn-success" name="vote" value="no" id="vote-no">no</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>\n'
+        self.assertIn(str.encode(testtext), result.data)
+
+    def test_proxy_vote_no_proxy(self):
+        voter='testuser'
+        proxy='User B'
+        # wrong proxy id
+        proxyid=3
+
+        response = self.addProxy(user, proxy, voter)
+        self.assertEqual(response.status_code, 302)
+
+        motion='g1.20200402.004'
+        response = self.createVote(user, motion, 'yes', proxyid)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, proxy not found'), response.data)
+        
+        # non existing id
+        proxyid=10000
+
+        motion='g1.20200402.004'
+        response = self.createVote(user, motion, 'yes', proxyid)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, proxy not found'), response.data)
+
+    def test_proxy_vote_no_voter(self):
+        voter='User A'
+        proxy='User B'
+        proxyid=2
+
+        response = self.addProxy(user, proxy, voter)
+        self.assertEqual(response.status_code, 302)
+
+        user1='testuser1/'
+        motion='g1.20200402.004'
+        response = self.createVote(user1, motion, 'yes', proxyid)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Forbidden'), response.data)
+
 
 
 if __name__ == "__main__":

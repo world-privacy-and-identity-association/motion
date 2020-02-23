@@ -47,9 +47,12 @@
 .motion p {
   padding: 10px;
 }
+td {
+  padding: 4px;
+}
 form {
-  margin-top:5px;
-  margin-bottom:5px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 </style>
 </head>
@@ -82,13 +85,12 @@ form {
     </ul>
   </div>
 </nav>
-
 {%- block body %}
 {% endblock %}
 <!-- Footer -->
   <footer class="page-footer">
     <div class="footer-copyright text-center py-3">
-      <p>© {{footer.version_year}} Copyright: <a href="{{footer.copyright_link}}">{{footer.copyright_name}}</a> 
+      <p>&copy; {{footer.version_year}} Copyright: <a href="{{footer.copyright_link}}">{{footer.copyright_name}}</a> 
       | <a href="{{footer.imprint_link}}">Imprint</a> 
       | <a href="{{footer.dataprotection_link}}">Data protection</a></p>
     </div>

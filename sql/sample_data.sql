@@ -15,10 +15,10 @@ INSERT INTO motion (id,identifier,name,type,host,content,posed,posed_by,deadline
     (4,'g1.20200402.004','Motion D','group1','127.0.0.1:5000','A fourth motion', current_timestamp ,1,current_timestamp + interval '1' day,Null,Null,Null);
 ALTER SEQUENCE motion_id_seq RESTART WITH 5;
 
-INSERT INTO vote (motion_id,voter_id,result,entered) VALUES (1,1,'yes','2020-04-02 21:54:34.469784');
-INSERT INTO vote (motion_id,voter_id,result,entered) VALUES (1,2,'yes','2020-04-02 21:54:34.469784');
-INSERT INTO vote (motion_id,voter_id,result,entered) VALUES (1,3,'no','2020-04-02 21:54:34.469784');
-INSERT INTO vote (motion_id,voter_id,result,entered) VALUES (2,1,'yes','2020-04-02 21:54:34.469784');
-INSERT INTO vote (motion_id,voter_id,result,entered) VALUES (2,2,'no','2020-04-02 21:54:34.469784');
-INSERT INTO vote (motion_id,voter_id,result,entered) VALUES (2,3,'no','2020-04-02 21:54:34.469784');
-INSERT INTO vote (motion_id,voter_id,result,entered) VALUES (3,3,'yes','2020-04-02 21:48:34.469784');
+INSERT INTO vote (motion_id,voter_id,proxy_id,result,entered) VALUES (1,1,1,'yes','2020-04-02 21:54:34.469784');
+INSERT INTO vote (motion_id,voter_id,proxy_id,result,entered) VALUES (1,2,2,'yes','2020-04-02 21:54:34.469784');
+INSERT INTO vote (motion_id,voter_id,proxy_id,result,entered) VALUES (1,3,2,'no','2020-04-02 21:54:34.469784');
+INSERT INTO vote (motion_id,voter_id,proxy_id,result,entered) VALUES (2,1,1,'yes','2020-04-02 21:54:34.469784');
+INSERT INTO vote (motion_id,voter_id,proxy_id,result,entered) VALUES (2,2,2,'no','2020-04-02 21:54:34.469784');
+INSERT INTO vote (motion_id,voter_id,proxy_id,result,entered) VALUES (2,3,3,'no','2020-04-02 21:54:34.469784');
+INSERT INTO vote (motion_id,voter_id,proxy_id,result,entered) VALUES (3,3,3,'yes','2020-04-02 21:48:34.469784');
