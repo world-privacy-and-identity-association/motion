@@ -4,8 +4,8 @@
 <form action="/proxy/add" method="POST">
   <table>
   <tr>
-    <td>Voter</td>
-    <td>Proxy</td>
+    <td>{{_('Voter')}}</td>
+    <td>{{_('Proxy')}}</td>
     <td></td>
   </tr>
   <tr>
@@ -24,7 +24,7 @@
       </select>
     </td>
     <td>
-      <button type="submit" class="btn btn-primary">Add</button>
+      <button type="submit" class="btn btn-primary">{{_('Add')}}</button>
     </td>
   </tr>
   </table>
@@ -33,20 +33,20 @@
 <form action="/proxy/revoke" method="POST">
 <div class="motion card" id="votes">
   <div class="card-heading text-white bg-info">
-    Granted Proxies
+    {{_('Granted Proxies')}}
   </div>
   <div class="card-body">
     <table>
       <thead>
-        <th>Voter</th>
-        <th>Proxy</th>
+        <th>{{_('Voter')}}</th>
+        <th>{{_('Proxy')}}</th>
         <th></th>
       </thead>
       {%- for row in proxies %}
       <tr>
         <td>{{row.voter_email}}</td>
         <td>{{row.proxy_email}}</td>
-        <td><button type="submit" class="btn btn-danger" name="id" value="{{row.id}}">Revoke</button></td>
+        <td><button type="submit" class="btn btn-danger" name="id" value="{{row.id}}">{{_('Revoke')}}</button></td>
       </tr>
       {%- endfor %}
     </table>
@@ -55,7 +55,7 @@
 </form>
 {%- endif %}
 <form action="/proxy/revokeall" method="POST">
-  <button type="submit" class="btn btn-danger">Revoke ALL</button>
+  <button type="submit" class="btn btn-danger">{{_('Revoke all')}}</button>
 </form>
 </div>
 {%- endblock %}

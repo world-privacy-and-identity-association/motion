@@ -3,11 +3,13 @@ from flask import Flask
 from flask import render_template, redirect
 from flask import request
 from functools import wraps
+from flask_babel import Babel, gettext
 import postgresql
 import filters
 from flaskext.markdown import Markdown
 from markdown.extensions import Extension
 from datetime import date, time, datetime
+import gettext
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -18,6 +20,8 @@ def get_db():
 
 app = Flask(__name__)
 app.register_blueprint(filters.blueprint)
+babel = Babel(app)
+gettext.install('motion')
 
 class EscapeHtml(Extension):
     def extendMarkdown(self, md, md_globals):
@@ -54,6 +58,10 @@ times = ConfigProxy("DURATION")
 debuguser = ConfigProxy("DEBUGUSER")
 
 max_proxy=app.config.get("MAX_PROXY")
+
+@babel.localeselector
+def get_locale():
+    return request.accept_languages.best_match(app.config['LANGUAGES'].keys())
 
 @app.before_request
 def lookup_user():
@@ -248,18 +256,18 @@ def rel_redirect(loc):
 def put_motion():
     cat=request.form.get("category", "")
     if cat not in get_allowed_cats("create"):
-        return "Forbidden", 403
+        return _('Forbidden'), 403
     time = int(request.form.get("days", "3"));
     if time not in times.per_host:
-        return "Error, invalid length", 400
+        return _('Error, invalid length'), 400
     title=request.form.get("title", "")
     title=title.strip()
     if title =='':
-        return "Error, missing title", 400
+        return _('Error, missing title'), 400
     content=request.form.get("content", "")
     content=content.strip()
     if content =='':
-        return "Error, missing content", 400
+        return _('Error, missing content'), 400
 
     db = get_db()
     with db.xact():
@@ -285,14 +293,14 @@ def validate_motion_access(privilege):
             with db.xact():
                 rv = db.prepare("SELECT id, type, deadline < CURRENT_TIMESTAMP AS expired, canceled FROM motion WHERE identifier=$1 AND host=$2")(motion, request.host);
                 if len(rv) == 0:
-                    return "Error, Not found", 404
+                    return _('Error, Not found'), 404
                 id = rv[0].get("id")
                 if not may(privilege, rv[0].get("type")):
-                    return "Forbidden", 403
+                    return _('Forbidden'), 403
                 if rv[0].get("canceled") is not None:
-                    return "Error, motion was canceled", 403
+                    return _('Error, motion was canceled'), 403
                 if rv[0].get("expired"):
-                    return "Error, out of time", 403
+                    return _('Error, out of time'), 403
             return f(motion, id)
         decorated_function.__name__ = f.__name__
         return decorated_function
@@ -311,7 +319,7 @@ def validate_motion_access_vote(privilege):
 @validate_motion_access('cancel')
 def cancel_motion(motion, id):
     if request.form.get("reason", "none") == "none":
-        return "Error, form requires reason", 500
+        return _('Error, form requires reason'), 500
     rv = get_db().prepare("UPDATE motion SET canceled=CURRENT_TIMESTAMP, cancelation_reason=$1, canceled_by=$2 WHERE identifier=$3 AND host=$4 AND canceled is NULL")(request.form.get("reason", ""), g.voter, motion, request.host)
     return motion_edited(motion)
 
@@ -330,7 +338,7 @@ def show_motion(motion):
                          + "WHERE motion.identifier=$1 AND motion.host=$3")
     resultmotion = p(motion, g.voter, request.host)
     if len(resultmotion) == 0:
-        return "Error, Not found", 404
+        return _('Error, Not found'), 404
 
     p = get_db().prepare("SELECT voter.email FROM vote INNER JOIN voter ON vote.proxy_id = voter.id WHERE vote.motion_id=$1 AND vote.voter_id=$2 AND vote.proxy_id <> vote.voter_id")
     resultproxyname = p(resultmotion[0][0], g.voter)
@@ -359,7 +367,7 @@ def vote(motion, voter, id):
     if (voterid != g.voter):
         rv = db.prepare("SELECT voter_id FROM proxy WHERE proxy.revoked IS NULL AND proxy.proxy_id = $1 AND proxy.voter_id = $2")(g.voter, voterid);
         if len(rv) == 0:
-            return "Error, proxy not found.", 400
+            return _('Error, proxy not found.'), 400
 
     p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2")
     rv = p(id, voterid)
@@ -372,39 +380,39 @@ def vote(motion, voter, id):
 @app.route("/proxy")
 def proxy():
     if not may_admin("proxyadmin"):
-        return "Forbidden", 403
+        return _('Forbidden'), 403
     return render_template('proxy.html', voters=get_voters(), proxies=get_all_proxies(), may_proxyadmin=may_admin("proxyadmin"))
 
 @app.route("/proxy/add", methods=['POST'])
 def add_proxy():
     if not may_admin("proxyadmin"):
-        return "Forbidden", 403
+        return _('Forbidden'), 403
     voter=request.form.get("voter", "")
     proxy=request.form.get("proxy", "")
     if voter == proxy :
-        return "Error, voter equals proxy.", 400
+        return _('Error, voter equals proxy.'), 400
     rv = get_db().prepare("SELECT id FROM voter WHERE email=$1")(voter);
     if len(rv) == 0:
-        return "Error, voter not found.", 400
+        return _('Error, voter not found.'), 400
     voterid = rv[0].get("id")
     rv = get_db().prepare("SELECT id FROM voter WHERE email=$1")(proxy);
     if len(rv) == 0:
-        return "Error, proxy not found.", 400
+        return _('Error, proxy not found.'), 400
     proxyid = rv[0].get("id")
     rv = get_db().prepare("SELECT id FROM proxy WHERE voter_id=$1 AND revoked is NULL")(voterid);
     if len(rv) != 0:
-        return "Error, proxy allready given.", 400
+        return _('Error, proxy allready given.'), 400
     rv = get_db().prepare("SELECT COUNT(id) as c FROM proxy WHERE proxy_id=$1 AND revoked is NULL GROUP BY proxy_id")(proxyid);
     if len(rv) != 0:
         if rv[0].get("c") >= max_proxy:
-            return "Error, Max proxy for '" + proxy + "' reached.", 400
+            return "Error, Max proxy for '%s' reached." % (proxy), 400
     rv = get_db().prepare("INSERT INTO proxy(voter_id, proxy_id, granted_by) VALUES ($1,$2,$3)")(voterid, proxyid, g.voter)
     return rel_redirect("/proxy")
 
 @app.route("/proxy/revoke", methods=['POST'])
 def revoke_proxy():
     if not may_admin("proxyadmin"):
-        return "Forbidden", 403
+        return _('Forbidden'), 403
     id=request.form.get("id", "")
     rv = get_db().prepare("UPDATE proxy SET revoked=CURRENT_TIMESTAMP, revoked_by=$1 WHERE id=$2")(g.voter, int(id))
     return rel_redirect("/proxy")
@@ -412,7 +420,7 @@ def revoke_proxy():
 @app.route("/proxy/revokeall", methods=['POST'])
 def revoke_proxy_all():
     if not may_admin("proxyadmin"):
-        return "Forbidden", 403
+        return _('Forbidden'), 403
     rv = get_db().prepare("UPDATE proxy SET revoked=CURRENT_TIMESTAMP, revoked_by=$1 WHERE revoked IS NULL")(g.voter)
     return rel_redirect("/proxy")
 

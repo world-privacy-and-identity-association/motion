@@ -2,10 +2,12 @@
 {% block body %}
 <div class="container">
 {%- if categories|length != 0 %}
+<div class="card">
+</div>
 <form action="/motion" method="POST" class="form-inline">
 <div class="motion card">
   <div class="motion-title card-heading alert-light from-group">
-    <input class="form-control motion-title-input" placeholder="Motion title" type="text" name="title" id="title" required="yes">
+    <input class="form-control motion-title-input" placeholder="{{_('Motion title')}}" type="text" name="title" id="title" required="yes">
     {%- if categories|length == 1 %}
     <input type="text" class="float form-control" maxwidth="10" disabled value="{{categories[0]}}">
     <input type="hidden" name="category" value="{{categories[0]}}">
@@ -23,26 +25,26 @@
     </select>
   </div>
   <div class="card-body">
-    <textarea class="form-control" placeholder="Motion content" name="content" rows="8"></textarea><br>
-    Editing note: Markdown is used formatting.<br>
-    To add a line break add two lines, to enter a link use [text](https://domain.tld/link)<br>
-    <button class="btn btn-primary" type="submit">Submit Motion</button>
+    <textarea class="form-control" placeholder="{{_('Motion content')}}" name="content" rows="8"></textarea><br>
+    {{_('Editing note: Markdown is used formatting.')}}<br>
+    {{_('To add a line break add two lines, to enter a link use [text](https//domain.tld/link)')}}<br>
+    <button class="btn btn-primary" type="submit">{{_('Submit Motion')}}</button>
   </div>
 </div>
 </form>
 {%- endif %}
 {%- if prev %}
 {%- if prev == -1 %}
-<a href="/" class="btn btn-primary">Prev</a>
+<a href="/" class="btn btn-primary">{{_('Prev')}}</a>
 {%- else %}
-<a href="/?start={{ prev }}" class="btn btn-primary">Prev</a>
+<a href="/?start={{ prev }}" class="btn btn-primary">{{_('Prev')}}</a>
 {%- endif %}
 {%- endif %}
 {%- for motion in motions %}
 {% include 'motion.html' %}
 {%- endfor %}
 {%- if more %}
-<a href="/?start={{ more }}" class="btn btn-primary">Next</a>
+<a href="/?start={{ more }}" class="btn btn-primary">{{_('Next')}}</a>
 {%- endif %}
 </div>
 {%- endblock %}

@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 {% block title -%}
-Motion: {{motion.name}}
+{{_('Motion')}}: {{motion.name}}
 {%- endblock %}
 {% block body %}
 {%- include 'motion.html' %}
 {%- if votes %}
 <div class="motion card" id="votes">
   <div class="card-heading text-white bg-info">
-    Motion Votes
+    {{_('Motion Votes')}}
   </div>
   <div class="card-body">
     {%- for row in votes %}
-    <div>{{row.email}}: {{row.result}}{%- if row.proxyemail %} : given by {{row.proxyemail}}{%- endif %}</div>
+    <div>{{row.email}}: {{row.result}}{%- if row.proxyemail %} : {_('given by')}} {{row.proxyemail}}{%- endif %}</div>
     {%- endfor %}
   </div>
 </div>
@@ -22,20 +22,20 @@ Motion: {{motion.name}}
 {%- if may_vote %}
 <div class="panel panel-info" id="votes">
   <div class="panel-body">
-<h3>My vote</h3>
+<h3>{{_('My vote')}}</h3>
 {%- if proxyname %}
-Given by {{proxyname[0][0]}}
+{{_('Given by')}} {{proxyname[0][0]}}
 {%- endif %}
 <form action="/motion/{{motion.identifier}}/vote/{{g.voter}}" method="POST">
-{%- for vote in ['yes','no','abstain'] %}
-<button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{vote}}</button>
+{%- for vote in ['yes', 'no', 'abstain'] %}
+<button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{_(vote)}}</button>
 {%- endfor %}
 </form>
 
 {%- for p in proxyvote %}
-<h3>Vote for {{p.email}}</h3>
+<h3>{{_('Vote for')}} {{p.email}}</h3>
 {%- if p.owneremail and p.result%}
-Voted by {{p.owneremail}}
+{{_('Voted by')}} {{p.owneremail}}
 {%- endif %}
 <form action="/motion/{{motion.identifier}}/vote/{{p.voter_id}}" method="POST">
 {%- for vote in ['yes','no','abstain'] %}
@@ -47,18 +47,17 @@ Voted by {{p.owneremail}}
 
 {%- if may_cancel %}
 <form action="/motion/{{motion.identifier}}/cancel" method="POST" class="form-inline">
-<input type="text" placeholder="cancelation reason" name="reason" class="form-control" required="yes">
-<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">Cancel</button></br>
+<input type="text" placeholder="{{_('Cancelation reason')}}" name="reason" class="form-control" required="yes">
+<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">{{_('Cancel')}}</button></br>
 </form>
 {%- endif %}
 {%- if may_finish %}
 <form action="/motion/{{motion.identifier}}/finish" method="POST" class="form-inline">
-<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">Finish</button></br>
+<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">{{_('Finish')}}</button></br>
 </form>
 {%- endif %}
-
 {%- endif %}
-<a href="/?start={{motion.id}}#motion-{{motion.id}}" class="btn btn-primary">Back</a>
+<a href="/?start={{motion.id}}#motion-{{motion.id}}" class="btn btn-primary">{{_('Back')}}</a>
 {%- endblock %}
   </div>
 </div>
