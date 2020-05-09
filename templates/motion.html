@@ -9,11 +9,11 @@
     <span class="motion-type">{{motion.type}}</span>
     <div># <a href="/motion/{{motion.identifier}}" class="anchor">{{motion.identifier}}</a></div>
     <div class="date">
-      <div>Posed: {{motion.posed|timestamp}} by {{motion.poser}}</div>
+      <div>Proposed: {{motion.posed|timestamp}} (UTC) by {{motion.poser}}</div>
 {%- if motion.canceled != None %}
-      <div>Canceled: {{motion.canceled|timestamp}} by {{motion.canceler}}</div></div>
+      <div>Canceled: {{motion.canceled|timestamp}} (UTC) by {{motion.canceler}}</div></div>
 {%- else %}
-      <div>Votes until: {{motion.deadline|timestamp}}</div></div>
+      <div>Votes until: {{motion.deadline|timestamp} (UTC)}</div></div>
 {%- endif %}
   </div>
   <div class="panel-body">
