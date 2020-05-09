@@ -4,6 +4,8 @@ from flask import render_template, redirect
 from flask import request
 import postgresql
 import filters
+from flaskext.markdown import Markdown
+from markdown.extensions import Extension
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -14,6 +16,13 @@ def get_db():
 
 app = Flask(__name__)
 app.register_blueprint(filters.blueprint)
+
+class EscapeHtml(Extension):
+    def extendMarkdown(self, md, md_globals):
+        del md.preprocessors['html_block']
+        del md.inlinePatterns['html']
+
+md = Markdown(app, extensions=[EscapeHtml()])
 
 # Load config
 app.config.from_pyfile('config.py')

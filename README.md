@@ -14,3 +14,9 @@ LANG=C.UTF-8 FLASK_DEBUG=1 FLASK_APP=motion.py flask run
 ```
 
 The database schema is automatically installed when the table "schema_version" does not exist and the application is started.
+
+# Usage
+
+Within the motion content markdown can be used for formatting e.g. 
+* To add a line break add two lines
+* to enter a link use `[text](https//domain.tld/link)`

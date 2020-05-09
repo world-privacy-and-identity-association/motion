@@ -5,3 +5,4 @@ Jinja2==2.10
 MarkupSafe==1.0
 py-postgresql==1.2.1
 Werkzeug==0.12.2
+Flask-Markdown==0.3
