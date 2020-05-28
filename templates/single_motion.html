@@ -5,11 +5,11 @@ Motion: {{motion.name}}
 {% block body %}
 {%- include 'motion.html' %}
 {%- if votes %}
-<div class="panel panel-info" id="votes">
-  <div class="panel-heading">
+<div class="motion card" id="votes">
+  <div class="card-heading text-white bg-info">
     Motion Votes
   </div>
-  <div class="panel-body">
+  <div class="card-body">
     {%- for row in votes %}
     <div>{{row.email}}: {{row.result}}</div>
     {%- endfor %}
