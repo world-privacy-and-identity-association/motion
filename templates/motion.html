@@ -21,7 +21,7 @@
 {%- if motion.yes or motion.no or motion.abstain %}
     <p>
 {%- for vote in ['yes', 'no', 'abstain'] %}
-{{vote|capitalize}} <span class="badge">{{motion[vote]}}</span><br>
+{{vote|capitalize}} <span class="badge badge-pill badge-secondary">{{motion[vote]}}</span><br>
 {%- endfor %}
     </p>
 {%- endif %}
