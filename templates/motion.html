@@ -1,8 +1,8 @@
 <div class="motion card" id="motion-{{motion.id}}">
   <div class="motion-title card-heading 
-  {%- if motion.running %} bg-light
-{%- elif motion.canceled %} text-white bg-warning
-{%- elif motion.yes is defined %}{% if motion.yes != None and motion.no != None and motion.yes > motion.no %} text-white bg-success{% else %} text-white bg-danger{% endif %}
+  {%- if motion.running %} alert-light
+{%- elif motion.canceled %} alert-warning
+{%- elif motion.yes is defined %}{% if motion.yes != None and motion.no != None and motion.yes > motion.no %} alert-success{% else %} alert-danger{% endif %}
 {%- else %} bg-light{%- endif -%}
 ">
     <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else ('Canceled' if motion.canceled != None else 'Finished') }})
