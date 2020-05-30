@@ -222,7 +222,7 @@ class VoterTests(BasicTest):
         response = self.createVote(user, motion, 'no')
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
-         resulttext=self.buildResultText('A fourth motion', 0, 1, 0)
+        resulttext=self.buildResultText('A fourth motion', 0, 1, 0)
         self.assertIn(str.encode(resulttext), result.data)
         response = self.createVote(user, motion, 'abstain')
         self.assertEqual(response.status_code, 302)
