@@ -5,6 +5,12 @@ from unittest import TestCase
 from motion import app
 from datetime import datetime
 
+app.config.update(
+    DEBUGUSER = {},
+    GROUP_PREFIX = {'127.0.0.1:5000': {'group1': 'g1', 'group2': 'g2'}},
+    DURATION = {'127.0.0.1:5000':[3, 7, 14]}
+)
+
 class BasicTest(TestCase):
 
     # functions to manipulate motions
@@ -37,14 +43,14 @@ class BasicTest(TestCase):
 
     # functions to clear database
     def db_clear(self):
-        db = postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD"))
-        with app.open_resource('sql/schema.sql', mode='r') as f:
-            db.execute(f.read())
+        with postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD")) as db:
+            with app.open_resource('sql/schema.sql', mode='r') as f:
+                db.execute(f.read())
 
     def db_sampledata(self):
-        db = postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD"))
-        with app.open_resource('sql/sample_data.sql', mode='r') as f:
-            db.execute(f.read())
+        with postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD")) as db:
+            with app.open_resource('sql/sample_data.sql', mode='r') as f:
+                db.execute(f.read())
 
 
 # no specific rights required
