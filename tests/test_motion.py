@@ -8,10 +8,22 @@ from datetime import datetime
 app.config.update(
     DEBUGUSER = {},
     GROUP_PREFIX = {'127.0.0.1:5000': {'group1': 'g1', 'group2': 'g2'}},
-    DURATION = {'127.0.0.1:5000':[3, 7, 14]}
+    DURATION = {'127.0.0.1:5000':[3, 7, 14]},
+    SERVER_NAME = '127.0.0.1:5000'
 )
 
+app.config['TESTING'] = True
+app.config['DEBUG'] = False
+
+
 class BasicTest(TestCase):
+
+    def init_test(self):
+        self.app = app.test_client()
+        self.assertEqual(app.debug, False)
+
+        # reset database
+        self.db_clear()
 
     # functions to manipulate motions
     def createVote(self, user, motion, vote):
@@ -55,19 +67,12 @@ class BasicTest(TestCase):
 
 # no specific rights required
 class GeneralTests(BasicTest):
-    
+
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['DEBUG'] = False
-        app.config.update(SERVER_NAME="127.0.0.1:5000")
+        self.init_test()
         global user
         user = 'testuser/'
-        # reset database
-        self.db_clear()
         self.db_sampledata()
-
-        self.app = app.test_client()
-        self.assertEqual(app.debug, False)
 
     def tearDown(self):
         pass
@@ -75,12 +80,9 @@ class GeneralTests(BasicTest):
     def test_main_page(self):
         response = self.app.get('/', environ_base={'USER_ROLES': user}, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        
+
     def test_basic_results_data(self):
         result = self.app.get('/', environ_base={'USER_ROLES': user}, follow_redirects=True)
-
-        #self.assertIn(str.encode('User: testuser'), result.data)
-
         testtext= '<div class="motion card" id="motion-3">\n  <div class="motion-title card-heading alert-warning">'\
             + '\n    <span class=\"title-text\">Motion C</span> (Canceled)\n    <span class=\"motion-type\">group1</span>'\
             + '\n    <div># <a href=\"/motion/g1.20200402.003\" class=\"anchor\">g1.20200402.003</a></div>'\
@@ -121,7 +123,7 @@ class GeneralTests(BasicTest):
         self.assertIn(str.encode(testtext), result.data)
         testtext= 'id=\"motion-1\">'
         self.assertIn(str.encode(testtext), result.data)
-        
+
     def test_basic_results_data_details(self):
         motion='g1.20200402.002'
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
@@ -149,19 +151,20 @@ class GeneralTests(BasicTest):
         testtext= 'id=\"motion-3\">'
         self.assertIn(str.encode(testtext), result.data)
 
+    def test_basic_results_data_details_not_given(self):
+        motion='g1.30190402.001'
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
+        self.assertEqual(result.status_code, 404)
+        self.assertIn(str.encode('Error, Not found'), result.data)
+
+
 class VoterTests(BasicTest):
+
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['DEBUG'] = False
-        app.config.update(SERVER_NAME="127.0.0.1:5000")
+        self.init_test()
         global user
         user='testuser/vote:*'
-        # reset database
-        self.db_clear()
         self.db_sampledata()
-
-        self.app = app.test_client()
-        self.assertEqual(app.debug, False)
 
     def tearDown(self):
         pass
@@ -169,7 +172,7 @@ class VoterTests(BasicTest):
     def test_main_page(self):
         response = self.app.get('/', environ_base={'USER_ROLES': user}, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        
+
     def test_home_data(self):
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         self.assertNotIn("<select class=\"float form-control\" name=\"category\">", str(result.data) )
@@ -235,7 +238,7 @@ class VoterTests(BasicTest):
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 0, 0, 1)
         self.assertIn(str.encode(resulttext), result.data)
-        
+
     def test_vote_group(self):
         motion='g1.20200402.004'
         response = self.createVote(user, motion, 'yes')
@@ -269,7 +272,7 @@ class VoterTests(BasicTest):
         response = self.createVote(user, motion, 'abstain')
         self.assertEqual(response.status_code, 500)
         self.assertIn(str.encode('Error, motion deadline has passed'), response.data)
-        
+
     def test_vote_not_given(self):
         motion='g1.30190402.001'
         response = self.createVote(user, motion, 'abstain')
@@ -298,20 +301,15 @@ class VoterTests(BasicTest):
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Forbidden'), response.data)
 
+
 class CreateMotionTests(BasicTest):
+
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['DEBUG'] = False
-        app.config.update(SERVER_NAME="127.0.0.1:5000")
+        self.init_test()
         global user
         user='testuser/vote:* create:* cancel:*'
-        # reset database
         self.db_clear()
 
-        self.app = app.test_client()
-        self.assertEqual(app.debug, False)
- 
-    # executed after each test
     def tearDown(self):
         pass
 
@@ -344,7 +342,7 @@ class CreateMotionTests(BasicTest):
         self.assertIn(str.encode(title), result.data)
         self.assertIn(str.encode(content), result.data)
         self.assertIn(str.encode('g1.'+datetime.today().strftime('%Y%m%d')+'.002'), result.data)
-        
+
         title='My Motion2'
         content='My body2'
         response = self.createMotion(user, title, content, '3', 'group2')
@@ -434,19 +432,17 @@ class CreateMotionTests(BasicTest):
         self.assertEqual(response.status_code, 404)
         self.assertIn(str.encode('Error, Not found'), response.data)
 
+
 class AuditMotionTests(BasicTest):
+
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['DEBUG'] = False
-        app.config.update(SERVER_NAME="127.0.0.1:5000")
+        self.init_test()
         global user
         user='testuser/audit:*'
-        # reset database
-        self.db_clear()
         self.db_sampledata()
 
-        self.app = app.test_client()
-        self.assertEqual(app.debug, False)
+    def tearDown(self):
+        pass
 
     def test_see_old_vote(self):
         motion='g1.20200402.002'
@@ -455,10 +451,6 @@ class AuditMotionTests(BasicTest):
             + '\n  <div class="card-body">\n    <div>User A: yes</div>\n    <div>User B: no</div>'\
             + '\n    <div>User C: no</div>\n  </div>\n</div>\n<a href="/?start=2#motion-2" class="btn btn-primary">Back</a>'
         self.assertIn(str.encode(testtext), result.data)
-
-    # executed after each test
-    def tearDown(self):
-        pass
 
 
 if __name__ == "__main__":

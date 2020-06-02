@@ -225,6 +225,8 @@ def show_motion(motion):
                          + "LEFT JOIN voter canceler ON canceler.id = motion.canceled_by "
                          + "WHERE motion.identifier=$1 AND motion.host=$3")
     rv = p(motion, g.voter, request.host)
+    if len(rv) == 0:
+        return "Error, Not found", 404
     votes = None
     if may("audit", rv[0].get("type")) and not rv[0].get("running") and not rv[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(rv[0].get("id"));
