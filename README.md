@@ -1,5 +1,8 @@
 # Installation
-Requires 3.
+Requires Python 3 and a running PostgreSQL installation.
+
+For a productive environment use a nginx webserver.
+
 To install:
 ```
 virtualenv -p python3 .
@@ -7,6 +10,8 @@ virtualenv -p python3 .
 pip install -r requirements.txt
 ```
 Then edit config.py.example into config.py with your database connection
+
+## Development and debug
 
 To debug-run linux:
 ```
