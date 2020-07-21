@@ -1,4 +1,4 @@
-DATABASE="..."
+DATABASE="pg://dbserver/db"
 USER="..."
 PASSWORD="..."
 
