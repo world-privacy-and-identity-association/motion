@@ -24,22 +24,23 @@
   <div class="panel-body">
 <h3>{{_('My vote')}}</h3>
 {%- if proxyname %}
-{{_('Given by')}} {{proxyname[0][0]}}
+{{_('Given by %(pn)s', pn=proxyname[0][0])}}
+
 {%- endif %}
 <form action="/motion/{{motion.identifier}}/vote/{{g.voter}}" method="POST">
 {%- for vote in ['yes', 'no', 'abstain'] %}
-<button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{_(vote)}}</button>
+<button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{_(vote)|capitalize}}</button>
 {%- endfor %}
 </form>
 
 {%- for p in proxyvote %}
-<h3>{{_('Vote for')}} {{p.email}}</h3>
+<h3>{{_('Vote for %(email)s', email=p.email)}}</h3>
 {%- if p.owneremail and p.result%}
-{{_('Voted by')}} {{p.owneremail}}
+{{_('Voted by %(email)s', email=p.owneremail)}}
 {%- endif %}
 <form action="/motion/{{motion.identifier}}/vote/{{p.voter_id}}" method="POST">
-{%- for vote in ['yes','no','abstain'] %}
-<button type="submit" class="btn btn-{{ 'success' if vote == p.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{vote}}</button>
+{%- for vote in ['yes', 'no', 'abstain'] %}
+<button type="submit" class="btn btn-{{ 'success' if vote == p.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{_(vote)|capitalize}}</button>
 {%- endfor %}
 </form>
 {%- endfor %}

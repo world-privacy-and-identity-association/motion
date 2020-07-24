@@ -13,11 +13,11 @@
 {%- endif %}
     </div>
     <div class="date">
-      <div>{{_('Proposed')}}: {{motion.posed|timestamp}} (UTC) {{_('by')}} {{motion.poser}}</div>
+      <div>{{_('Proposed')}}: {{_('%(dt)s (UTC) by %(user)s', dt=motion.posed|timestamp, user=motion.poser)}}</div>
 {%- if motion.canceled != None %}
-      <div>{{_('Canceled')}}: {{motion.canceled|timestamp}} (UTC) {{_('by')}} {{motion.canceler}}</div>
+      <div>{{_('Canceled')}}: {{_('%(dt)s (UTC) by %(user)s', dt=motion.canceled|timestamp, user=motion.poser)}}</div>
 {%- else %}
-      <div>{{_('Votes until')}}: {{motion.deadline|timestamp}} (UTC)</div>
+      <div>{{_('Votes until')}}: {{_('%(dt)s (UTC)', dt=motion.deadline|timestamp)}}</div>
 {%- endif %}
      </div>
   </div>

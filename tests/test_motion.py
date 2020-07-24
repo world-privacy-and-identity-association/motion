@@ -234,11 +234,11 @@ class VoterTests(BasicTest):
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         resulttext=self.buildResultText('A fourth motion', 1, 0, 0)
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
-        testtext= 'class=\"btn btn-success\" name=\"vote\" value="yes" id="vote-yes">yes</button>'
+        testtext= 'class=\"btn btn-success\" name=\"vote\" value="yes" id="vote-yes">Yes</button>'
         self.assertIn(str.encode(testtext), result.data)
-        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"no\" id=\"vote-no\">no</button>'
+        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"no\" id=\"vote-no\">No</button>'
         self.assertIn(str.encode(testtext), result.data)
-        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"abstain\" id=\"vote-abstain\">abstain</button>'
+        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"abstain\" id=\"vote-abstain\">Abstain</button>'
         self.assertIn(str.encode(testtext), result.data)
 
     def test_vote_no(self):
@@ -249,11 +249,11 @@ class VoterTests(BasicTest):
         resulttext=self.buildResultText('A fourth motion', 0, 1, 0)
         self.assertIn(str.encode(resulttext), result.data)
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
-        testtext= 'class="btn btn-primary" name="vote\" value=\"yes\" id=\"vote-yes\">yes</button>'
+        testtext= 'class="btn btn-primary" name="vote\" value=\"yes\" id=\"vote-yes\">Yes</button>'
         self.assertIn(str.encode(testtext), result.data)
-        testtext= 'class=\"btn btn-success\" name=\"vote\" value=\"no\" id=\"vote-no\">no</button>'
+        testtext= 'class=\"btn btn-success\" name=\"vote\" value=\"no\" id=\"vote-no\">No</button>'
         self.assertIn(str.encode(testtext), result.data)
-        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"abstain\" id=\"vote-abstain\">abstain</button>'
+        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"abstain\" id=\"vote-abstain\">Abstain</button>'
         self.assertIn(str.encode(testtext), result.data)
 
     def test_vote_abstain(self):
@@ -264,11 +264,11 @@ class VoterTests(BasicTest):
         resulttext=self.buildResultText('A fourth motion', 0, 0, 1)
         self.assertIn(str.encode(resulttext), result.data)
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
-        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"yes\" id=\"vote-yes\">yes</button>'
+        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"yes\" id=\"vote-yes\">Yes</button>'
         self.assertIn(str.encode(testtext), result.data)
-        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"no\" id=\"vote-no\">no</button>'
+        testtext= 'class=\"btn btn-primary\" name=\"vote\" value=\"no\" id=\"vote-no\">No</button>'
         self.assertIn(str.encode(testtext), result.data)
-        testtext= 'class=\"btn btn-success\" name=\"vote\" value=\"abstain\" id=\"vote-abstain\">abstain</button>'
+        testtext= 'class=\"btn btn-success\" name=\"vote\" value=\"abstain\" id=\"vote-abstain\">Abstain</button>'
         self.assertIn(str.encode(testtext), result.data)
 
     def test_vote_change(self):
@@ -793,15 +793,15 @@ class ProxyVoteTests(BasicTest):
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
         # own vote without change
         testtext= '<form action="/motion/g1.20200402.004/vote/4" method="POST">\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="yes" id="vote-yes">yes</button>\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">no</button>\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>'
+            + '<button type="submit" class="btn btn-primary" name="vote" value="yes" id="vote-yes">Yes</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">No</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">Abstain</button>\n</form>'
         self.assertIn(str.encode(testtext), result.data)
         # proxy vote with change
         testtext= '<form action="/motion/g1.20200402.004/vote/2" method="POST">\n'\
-            + '<button type="submit" class="btn btn-success" name="vote" value="yes" id="vote-yes">yes</button>\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">no</button>\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>\n'
+            + '<button type="submit" class="btn btn-success" name="vote" value="yes" id="vote-yes">Yes</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">No</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">Abstain</button>\n</form>\n'
         self.assertIn(str.encode(testtext), result.data)
         
         # User B view
@@ -809,9 +809,9 @@ class ProxyVoteTests(BasicTest):
         # own vote without change
         testtext= '<h3>My vote</h3>\nGiven by testuser\n'\
             + '<form action="/motion/g1.20200402.004/vote/2" method="POST">\n'\
-            + '<button type="submit" class="btn btn-success" name="vote" value="yes" id="vote-yes">yes</button>\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">no</button>\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>'
+            + '<button type="submit" class="btn btn-success" name="vote" value="yes" id="vote-yes">Yes</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="no" id="vote-no">No</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">Abstain</button>\n</form>'
         self.assertIn(str.encode(testtext), result.data)
         
         # change vote
@@ -820,9 +820,9 @@ class ProxyVoteTests(BasicTest):
 
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
         testtext= '<form action="/motion/g1.20200402.004/vote/2" method="POST">\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="yes" id="vote-yes">yes</button>\n'\
-            + '<button type="submit" class="btn btn-success" name="vote" value="no" id="vote-no">no</button>\n'\
-            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">abstain</button>\n</form>\n'
+            + '<button type="submit" class="btn btn-primary" name="vote" value="yes" id="vote-yes">Yes</button>\n'\
+            + '<button type="submit" class="btn btn-success" name="vote" value="no" id="vote-no">No</button>\n'\
+            + '<button type="submit" class="btn btn-primary" name="vote" value="abstain" id="vote-abstain">Abstain</button>\n</form>\n'
         self.assertIn(str.encode(testtext), result.data)
 
     def test_proxy_vote_no_proxy(self):

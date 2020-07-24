@@ -9,6 +9,7 @@ import filters
 from flaskext.markdown import Markdown
 from markdown.extensions import Extension
 from datetime import date, time, datetime
+from flask_language import Language, current_language
 import gettext
 
 def get_db():
@@ -21,6 +22,7 @@ def get_db():
 app = Flask(__name__)
 app.register_blueprint(filters.blueprint)
 babel = Babel(app)
+lang = Language(app)
 gettext.install('motion')
 
 class EscapeHtml(Extension):
@@ -61,7 +63,21 @@ max_proxy=app.config.get("MAX_PROXY")
 
 @babel.localeselector
 def get_locale():
-    return request.accept_languages.best_match(app.config['LANGUAGES'].keys())
+    return str(current_language)
+
+@lang.allowed_languages
+def get_allowed_languages():
+    return app.config['LANGUAGES'].keys()
+
+@lang.default_language
+def get_default_language():
+    return 'en'
+
+def get_languages():
+    return app.config['LANGUAGES']
+
+# Manually add vote options to the translation strings. They are used as keys in loops.
+TRANSLATION_STRINGS={_('yes'), _('no'), _('abstain')}
 
 @app.before_request
 def lookup_user():
@@ -85,11 +101,11 @@ def lookup_user():
         roles = env.get("ROLES")
 
     if user is None:
-        return "Server misconfigured", 500
+        return _('Server misconfigured'), 500
     roles = roles.split(" ")
 
     if user == "<invalid>":
-        return "Access denied", 403;
+        return _('Access denied'), 403;
 
     db = get_db()
     with db.xact():
@@ -245,7 +261,7 @@ def main():
         else:
             prev = -1
     return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times.per_host, prev=prev,
-                           categories=get_allowed_cats("create"), singlemotion=False, may_proxyadmin=may_admin("proxyadmin"))
+                           categories=get_allowed_cats("create"), singlemotion=False, may_proxyadmin=may_admin("proxyadmin"), languages=get_languages())
 
 def rel_redirect(loc):
     r = redirect(loc)
@@ -354,7 +370,7 @@ def show_motion(motion):
     if may("audit", resultmotion[0].get("type")) and not resultmotion[0].get("running") and not resultmotion[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(resultmotion[0].get("id"));
         votes = get_db().prepare("SELECT vote.result, voter.email, CASE voter.email WHEN proxy.email THEN NULL ELSE proxy.email END as proxyemail FROM vote INNER JOIN voter ON voter.id = vote.voter_id INNER JOIN voter as proxy ON proxy.id = vote.proxy_id WHERE vote.motion_id=$1")(resultmotion[0].get("id"));
-    return render_template('single_motion.html', motion=resultmotion[0], may_vote=may("vote", resultmotion[0].get("type")), may_cancel=may("cancel", resultmotion[0].get("type")), votes=votes, proxyvote=resultproxyvote, proxyname=resultproxyname)
+    return render_template('single_motion.html', motion=resultmotion[0], may_vote=may("vote", resultmotion[0].get("type")), may_cancel=may("cancel", resultmotion[0].get("type")), votes=votes, proxyvote=resultproxyvote, proxyname=resultproxyname, languages=get_languages())
 
 @app.route("/motion/<string:motion>/vote/<string:voter>", methods=['POST'])
 @validate_motion_access_vote('vote')
@@ -381,7 +397,7 @@ def vote(motion, voter, id):
 def proxy():
     if not may_admin("proxyadmin"):
         return _('Forbidden'), 403
-    return render_template('proxy.html', voters=get_voters(), proxies=get_all_proxies(), may_proxyadmin=may_admin("proxyadmin"))
+    return render_template('proxy.html', voters=get_voters(), proxies=get_all_proxies(), may_proxyadmin=may_admin("proxyadmin"), languages=get_languages())
 
 @app.route("/proxy/add", methods=['POST'])
 def add_proxy():
@@ -405,7 +421,7 @@ def add_proxy():
     rv = get_db().prepare("SELECT COUNT(id) as c FROM proxy WHERE proxy_id=$1 AND revoked is NULL GROUP BY proxy_id")(proxyid);
     if len(rv) != 0:
         if rv[0].get("c") >= max_proxy:
-            return "Error, Max proxy for '%s' reached." % (proxy), 400
+            return _("Error, Max proxy for '%s' reached.") % (proxy), 400
     rv = get_db().prepare("INSERT INTO proxy(voter_id, proxy_id, granted_by) VALUES ($1,$2,$3)")(voterid, proxyid, g.voter)
     return rel_redirect("/proxy")
 
@@ -424,3 +440,7 @@ def revoke_proxy_all():
     rv = get_db().prepare("UPDATE proxy SET revoked=CURRENT_TIMESTAMP, revoked_by=$1 WHERE revoked IS NULL")(g.voter)
     return rel_redirect("/proxy")
 
+@app.route("/language/<string:language>")
+def set_language(language):
+    lang.change_language(language)
+    return rel_redirect("/")
