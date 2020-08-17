@@ -187,7 +187,16 @@ def put_motion():
         return "Forbidden", 403
     time = int(request.form.get("days", "3"));
     if time not in times.per_host:
-        return "Error, invalid length", 500
+        return "Error, invalid length", 400
+    title=request.form.get("title", "")
+    title=title.strip()
+    if title =='':
+        return "Error, missing title", 400
+    content=request.form.get("content", "")
+    content=content.strip()
+    if content =='':
+        return "Error, missing content", 400
+
     db = get_db()
     with db.xact():
         t = db.prepare("SELECT CURRENT_TIMESTAMP")()[0][0];
@@ -199,7 +208,7 @@ def put_motion():
         else:
             ident=prefix.per_host[cat]+"."+t.strftime("%Y%m%d")+"."+("%03d" % (int(sr[0][0].split(".")[2])+1))
         p = db.prepare("INSERT INTO motion(\"name\", \"content\", \"deadline\", \"posed_by\", \"type\", \"identifier\", \"host\") VALUES($1, $2, CURRENT_TIMESTAMP + $3 * interval '1 days', $4, $5, $6, $7)")
-        p(request.form.get("title", ""), request.form.get("content",""), time, g.voter, cat, ident, request.host)
+        p(title, content, time, g.voter, cat, ident, request.host)
     return rel_redirect("/")
 
 def motion_edited(motion):
