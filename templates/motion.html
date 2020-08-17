@@ -7,7 +7,11 @@
 ">
     <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else ('Canceled' if motion.canceled != None else 'Finished') }})
     <span class="motion-type">{{motion.type}}</span>
-    <div># <a href="/motion/{{motion.identifier}}" class="anchor">{{motion.identifier}}</a></div>
+    <div># {{motion.identifier}}
+{%- if singlemotion == False %}
+    <a class="btn btn-primary" href="/motion/{{motion.identifier}}" role="button">{{ 'Vote' if motion.running else 'Result' }}</a>
+{%- endif %}
+    </div>
     <div class="date">
       <div>Proposed: {{motion.posed|timestamp}} (UTC) by {{motion.poser}}</div>
 {%- if motion.canceled != None %}

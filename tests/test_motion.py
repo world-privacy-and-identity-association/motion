@@ -85,7 +85,9 @@ class GeneralTests(BasicTest):
         result = self.app.get('/', environ_base={'USER_ROLES': user}, follow_redirects=True)
         testtext= '<div class="motion card" id="motion-3">\n  <div class="motion-title card-heading alert-warning">'\
             + '\n    <span class=\"title-text\">Motion C</span> (Canceled)\n    <span class=\"motion-type\">group1</span>'\
-            + '\n    <div># <a href=\"/motion/g1.20200402.003\" class=\"anchor\">g1.20200402.003</a></div>'\
+            + '\n    <div># g1.20200402.003'\
+            + '\n    <a class="btn btn-primary" href="/motion/g1.20200402.003" role="button">Result</a>'\
+            + '\n    </div>'\
             + '\n    <div class=\"date\">\n      <div>Proposed: 2020-04-02 21:47:24 (UTC) by User A</div>'\
             + '\n      <div>Canceled: 2020-04-03 21:48:24 (UTC) by User A</div></div>\n  </div>'\
             + '\n  <div class=\"card-body\">\n    <p><p>A third motion</p></p>'\
@@ -96,7 +98,9 @@ class GeneralTests(BasicTest):
         self.assertIn(str.encode(testtext), result.data)
         testtext= '<div class="motion card" id="motion-2">\n  <div class="motion-title card-heading alert-danger">'\
             + '\n    <span class=\"title-text\">Motion B</span> (Finished)\n    <span class=\"motion-type\">group1</span>'\
-            + '\n    <div># <a href=\"/motion/g1.20200402.002\" class=\"anchor\">g1.20200402.002</a></div>'\
+            + '\n    <div># g1.20200402.002'\
+            + '\n    <a class="btn btn-primary" href="/motion/g1.20200402.002" role="button">Result</a>'\
+            + '\n    </div>'\
             + '\n    <div class=\"date\">\n      <div>Proposed: 2020-04-02 21:41:26 (UTC) by User A</div>'\
             + '\n      <div>Votes until: 2020-04-04 21:41:26 (UTC)</div></div>\n  </div>'\
             + '\n  <div class=\"card-body\">\n    <p><p>A second motion</p></p>'\
@@ -106,7 +110,9 @@ class GeneralTests(BasicTest):
         self.assertIn(str.encode(testtext), result.data)
         testtext= '<div class=\"motion card\" id=\"motion-1\">\n  <div class=\"motion-title card-heading alert-success\">'\
             + '\n    <span class=\"title-text\">Motion A</span> (Finished)\n    <span class=\"motion-type\">group1</span>'\
-            + '\n    <div># <a href=\"/motion/g1.20200402.001\" class=\"anchor\">g1.20200402.001</a></div>'\
+            + '\n    <div># g1.20200402.001'\
+            + '\n    <a class="btn btn-primary" href="/motion/g1.20200402.001" role="button">Result</a>'\
+            + '\n    </div>'\
             + '\n    <div class=\"date">\n      <div>Proposed: 2020-04-02 21:40:33 (UTC) by User A</div>'\
             + '\n      <div>Votes until: 2020-04-02 21:40:33 (UTC)</div></div>\n  </div>'\
             + '\n  <div class=\"card-body\">\n    <p><p>My special motion</p></p>'\
@@ -333,6 +339,8 @@ class CreateMotionTests(BasicTest):
         self.assertIn(str.encode(title), result.data)
         self.assertIn(str.encode(content), result.data)
         self.assertIn(str.encode('g1.'+datetime.today().strftime('%Y%m%d')+'.001'), result.data)
+        testtext='<a class=\"btn btn-primary" href=\"/motion/g1.'+datetime.today().strftime('%Y%m%d')+'.001\" role=\"button\">Vote</a>'
+        self.assertIn(str.encode(testtext), result.data)
 
         title='My Motion1'
         content='My body1'

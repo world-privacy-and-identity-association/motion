@@ -172,7 +172,7 @@ def main():
         else:
             prev = -1
     return render_template('index.html', motions=rv[:10], more=rv[10]["id"] if len(rv) == 11 else None, times=times.per_host, prev=prev,
-                           categories=get_allowed_cats("create"))
+                           categories=get_allowed_cats("create"), singlemotion=False)
 
 def rel_redirect(loc):
     r = redirect(loc)
@@ -230,7 +230,7 @@ def show_motion(motion):
     votes = None
     if may("audit", rv[0].get("type")) and not rv[0].get("running") and not rv[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(rv[0].get("id"));
-    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), votes=votes)
+    return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), votes=votes, singlemotion=True)
 
 @app.route("/motion/<string:motion>/vote", methods=['POST'])
 def vote(motion):
