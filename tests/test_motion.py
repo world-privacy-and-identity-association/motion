@@ -48,6 +48,12 @@ class BasicTest(TestCase):
             data=dict(reason=reason)
         )
 
+    def finishMotion(self, user, motion):
+        return self.app.post(
+            '/motion/' + motion +'/finish',
+            environ_base={'USER_ROLES': user}
+        )
+
     def buildResultText(self, motiontext, yes, no, abstain):
         return '<p>'+motiontext+'</p></p>\n    <p>\nYes <span class=\"badge badge-pill badge-secondary\">'+str(yes)+'</span><br>'\
             + '\nNo <span class=\"badge badge-pill badge-secondary\">'+str(no)+'</span><br>'\
@@ -270,14 +276,14 @@ class VoterTests(BasicTest):
     def test_vote_closed(self):
         motion='g1.20200402.002'
         response = self.createVote(user, motion, 'abstain')
-        self.assertEqual(response.status_code, 500)
-        self.assertIn(str.encode('Error, motion deadline has passed'), response.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Error, out of time'), response.data)
 
     def test_vote_canceled(self):
         motion='g1.20200402.003'
         response = self.createVote(user, motion, 'abstain')
-        self.assertEqual(response.status_code, 500)
-        self.assertIn(str.encode('Error, motion deadline has passed'), response.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Error, motion was canceled'), response.data)
 
     def test_vote_not_given(self):
         motion='g1.30190402.001'
@@ -289,6 +295,12 @@ class VoterTests(BasicTest):
         motion='g1.20200402.004'
         reason="none"
         response = self.cancelMotion(user, motion, reason)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Forbidden'), response.data)
+
+    def test_finishMotion(self):
+        motion='g1.20200402.004'
+        response = self.finishMotion(user, motion)
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Forbidden'), response.data)
 
@@ -313,7 +325,7 @@ class CreateMotionTests(BasicTest):
     def setUp(self):
         self.init_test()
         global user
-        user='testuser/vote:* create:* cancel:*'
+        user='testuser/vote:* create:* cancel:* finish:*'
         self.db_clear()
 
     def tearDown(self):
@@ -428,18 +440,47 @@ class CreateMotionTests(BasicTest):
         self.assertEqual(response.status_code, 500)
         self.assertIn(str.encode('Error, form requires reason'), response.data)
 
-        reason='cancel test'
+        reason='cancel-test'
         response = self.cancelMotion(user, motion, reason)
         self.assertEqual(response.status_code, 302)
         result = self.app.get('/', environ_base={'USER_ROLES': user})
         self.assertIn(b'Cancelation reason: ' + str.encode(reason), result.data)
 
-        motion='g1.30190402.001'
+        motion='g1.20190402.001'
         reason="none"
         response = self.cancelMotion(user, motion, reason)
         self.assertEqual(response.status_code, 404)
         self.assertIn(str.encode('Error, Not found'), response.data)
 
+        motion='g1.30200402.001'
+        reason="cancel-test"
+        response = self.cancelMotion(user, motion, reason)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn(str.encode('Error, Not found'), response.data)
+
+        motion='g1.20200402.004'
+        response = self.cancelMotion(user, motion, reason)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Error, motion was canceled'), response.data)
+
+    def test_finishMotion(self):
+        self.db_sampledata()
+
+        motion='g1.20200402.004'
+        response = self.finishMotion(user, motion)
+        self.assertEqual(response.status_code, 302)
+        result = self.app.get('/', environ_base={'USER_ROLES': user})
+        self.assertIn(b'Motion D</span> (Finished)', result.data)
+
+        motion='g1.30190402.001'
+        response = self.finishMotion(user, motion)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn(str.encode('Error, Not found'), response.data)
+        
+        motion='g1.20200402.001'
+        response = self.finishMotion(user, motion)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Error, out of time'), response.data)
 
 class AuditMotionTests(BasicTest):
 
