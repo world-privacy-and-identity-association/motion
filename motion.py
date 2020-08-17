@@ -204,35 +204,38 @@ def put_motion():
 
 def motion_edited(motion):
     return rel_redirect("/?start=" + str(motion) + "#motion-" + str(motion))
-    
 
-def validate_access(data):
-    rv = get_db().prepare("SELECT id, type, deadline, canceled FROM motion WHERE identifier=$1 AND host=$2")(data[0], data[1]);
-    if len(rv) == 0:
-        return "Error, Not found", 404
-    id = rv[0].get("id")
-    if not may(data[2], rv[0].get("type")):
-        return "Forbidden", 403
-    if rv[0].get("deadline") < datetime.now() or rv[0].get("canceled") is not None:
-        return "Error, out of time", 403
-    return id
-
+def validate_motion_access(privilege):
+    def decorator(f):
+        def decorated_function(motion):
+            db = get_db()
+            with db.xact():
+                rv = db.prepare("SELECT id, type, deadline < CURRENT_TIMESTAMP AS expired, canceled FROM motion WHERE identifier=$1 AND host=$2")(motion, request.host);
+                if len(rv) == 0:
+                    return "Error, Not found", 404
+                id = rv[0].get("id")
+                if not may(privilege, rv[0].get("type")):
+                    return "Forbidden", 403
+                if rv[0].get("canceled") is not None:
+                    return "Error, motion was canceled", 403
+                if rv[0].get("expired"):
+                    return "Error, out of time", 403
+            return f(motion, id)
+        decorated_function.__name__ = f.__name__
+        return decorated_function
+    return decorator
     
 @app.route("/motion/<string:motion>/cancel", methods=['POST'])
-def cancel_motion(motion):
-    id = validate_access([motion, request.host, 'cancel'])
-    if not isinstance(id, int):
-        return id[0], id[1]
+@validate_motion_access('cancel')
+def cancel_motion(motion, id):
     if request.form.get("reason", "none") == "none":
         return "Error, form requires reason", 500
     rv = get_db().prepare("UPDATE motion SET canceled=CURRENT_TIMESTAMP, cancelation_reason=$1, canceled_by=$2 WHERE identifier=$3 AND host=$4 AND canceled is NULL")(request.form.get("reason", ""), g.voter, motion, request.host)
     return motion_edited(id)
 
 @app.route("/motion/<string:motion>/finish", methods=['POST'])
-def finish_motion(motion):
-    id = validate_access([motion, request.host, 'finish'])
-    if not isinstance(id, int):
-        return id[0], id[1]
+@validate_motion_access('finish')
+def finish_motion(motion, id):
     rv = get_db().prepare("UPDATE motion SET deadline=CURRENT_TIMESTAMP WHERE identifier=$1 AND host=$2 AND canceled is NULL")(motion, request.host)
     return motion_edited(id)
 
@@ -252,23 +255,14 @@ def show_motion(motion):
     return render_template('single_motion.html', motion=rv[0], may_vote=may("vote", rv[0].get("type")), may_cancel=may("cancel", rv[0].get("type")), may_finish=may("finish", rv[0].get("type")), votes=votes, singlemotion=True)
 
 @app.route("/motion/<string:motion>/vote", methods=['POST'])
-def vote(motion):
+@validate_motion_access('vote')
+def vote(motion, id):
     v = request.form.get("vote", "abstain")
     db = get_db()
-    with db.xact():
-        rv = db.prepare("SELECT id, type FROM motion WHERE identifier=$1 AND host=$2")(motion, request.host);
-        if len(rv) == 0:
-            return "Error, Not found", 404
-        if not may("vote", rv[0].get("type")):
-            return "Forbidden", 403
-        p = db.prepare("SELECT deadline > CURRENT_TIMESTAMP FROM motion WHERE identifier = $1 AND host=$2")
-        id = rv[0].get("id")
-        if not p(motion, request.host)[0][0]:
-            return "Error, motion deadline has passed", 500
-        p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2")
-        rv = p(id, g.voter)
-        if len(rv) == 0:
-            db.prepare("INSERT INTO vote(motion_id, voter_id, result) VALUES($1,$2,$3)")(id, g.voter, v)
-        else:
-            db.prepare("UPDATE vote SET result=$3, entered=CURRENT_TIMESTAMP WHERE motion_id=$1 AND voter_id = $2")(id, g.voter, v)
+    p = db.prepare("SELECT * FROM vote WHERE motion_id = $1 AND voter_id = $2")
+    rv = p(id, g.voter)
+    if len(rv) == 0:
+        db.prepare("INSERT INTO vote(motion_id, voter_id, result) VALUES($1,$2,$3)")(id, g.voter, v)
+    else:
+        db.prepare("UPDATE vote SET result=$3, entered=CURRENT_TIMESTAMP WHERE motion_id=$1 AND voter_id = $2")(id, g.voter, v)
     return motion_edited(id)

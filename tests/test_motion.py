@@ -276,14 +276,14 @@ class VoterTests(BasicTest):
     def test_vote_closed(self):
         motion='g1.20200402.002'
         response = self.createVote(user, motion, 'abstain')
-        self.assertEqual(response.status_code, 500)
-        self.assertIn(str.encode('Error, motion deadline has passed'), response.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Error, out of time'), response.data)
 
     def test_vote_canceled(self):
         motion='g1.20200402.003'
         response = self.createVote(user, motion, 'abstain')
-        self.assertEqual(response.status_code, 500)
-        self.assertIn(str.encode('Error, motion deadline has passed'), response.data)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(str.encode('Error, motion was canceled'), response.data)
 
     def test_vote_not_given(self):
         motion='g1.30190402.001'
@@ -461,7 +461,7 @@ class CreateMotionTests(BasicTest):
         motion='g1.20200402.004'
         response = self.cancelMotion(user, motion, reason)
         self.assertEqual(response.status_code, 403)
-        self.assertIn(str.encode('Error, out of time'), response.data)
+        self.assertIn(str.encode('Error, motion was canceled'), response.data)
 
     def test_finishMotion(self):
         self.db_sampledata()

@@ -40,7 +40,7 @@ The following user rights can be granted:
 - finish: user is able to close a running motion
 - audit: user is able to see given votes of a finished motion
 
-To grant right use the following (here with vote right as example): 
+To grant right use the following (here with vote right as example):
 - on all groups add "vote:*"
 - on one given group add "vote:group1"
 - on two given groups add "vote:group1 vote:group2"
