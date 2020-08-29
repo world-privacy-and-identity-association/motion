@@ -113,6 +113,8 @@ def init_db():
             ver = db.prepare("SELECT version FROM schema_version")()[0][0];
             print("Database Schema version: ", ver)
         except postgresql.exceptions.UndefinedTableError:
+            g._database = None
+            db = get_db()
             ver = 0
 
         if ver < 1:
@@ -124,8 +126,8 @@ def init_db():
             with app.open_resource('sql/from_1.sql', mode='r') as f:
                 db.execute(f.read())
                 ct={}
-                for g in [group for group in prefix[app.config.get("DEFAULT_HOST")]]:
-                    ct[g] = {"dt": "", "c": 0}
+                for group in [group for group in prefix[app.config.get("DEFAULT_HOST")]]:
+                    ct[group] = {"dt": "", "c": 0}
 
                 p = db.prepare("UPDATE \"motion\" SET \"identifier\"=$1 WHERE \"id\"=$2")
                 for row in db.prepare("SELECT id, \"type\", \"posed\" FROM \"motion\" ORDER BY \"id\" ASC"):
