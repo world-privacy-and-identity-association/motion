@@ -103,3 +103,79 @@ fastcgi_param USER_ROLES $motion_user_role;
 fastcgi_pass unix:/motion-socket/motion.fcgi;
 }
 ```
+
+# Configuration for a Jenkins Freestyle Project
+
+## Preconditions for Jenkins system
+
+* Python 3 installed with:
+
+  python3 virtualenv python3-pip
+
+* PostgreSQL server installed with motion database and database user
+
+
+## Add freestyle project
+
+### Source-Code-Management
+
+Adjust Git settings
+
+### Build Environment
+
+Add Bindings
+
+Add Username and password (separated)
+
+Enter username (DB_USER) and password (DB_PW) according to database credentials
+
+### Build
+
+Add build step shell
+
+Add the command
+
+```
+rm -rf env
+virtualenv -p python3 env
+. env/bin/activate
+pip3 install -r requirements.txt
+
+
+cat > config.py << EOF
+DATABASE="pq://IP-ADDRESS/motion"
+USER="${DB_USER}"
+PASSWORD="${DB_PW}"
+EOF
+
+python3 jenkins_job.py
+```
+
+If an IPv6 address is used the following needs to be added to the script to fix a bug of the IPv6 literal translation:
+(https://github.com/python-postgres/fe/issues/104)
+
+```
+patch env/lib/python3*/site-packages/postgresql/versionstring.py <<EOF
+diff --git a/postgresql/versionstring.py b/postgresql/versionstring.py
+index ccb3953..2503013 100644
+--- a/postgresql/versionstring.py
++++ b/postgresql/versionstring.py
+@@ -15,7 +15,7 @@ def split(vstr : str) -> (
+    Split a PostgreSQL version string into a tuple
+    (major,minor,patch,...,state_class,state_level)
+    """
+-   v = vstr.strip().split('.')
++   v = vstr.strip().split(' ')[0].split('.')
+ 
+    # Get rid of the numbers around the state_class (beta,a,dev,alpha, etc)
+    state_class = v[-1].strip('0123456789')
+EOF
+```
+
+### Post build actions
+
+Add Publish JUnit test result report - test report XMLs
+
+```
+python_tests_xml/*
+```
