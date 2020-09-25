@@ -139,7 +139,7 @@ class GeneralTests(BasicTest):
     def test_basic_results_data_details(self):
         motion='g1.20200402.002'
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
-        testtext= '<p>A second motion</p></p>\n  </div>\n</div>\n<a href=\"/?start=2#motion-2\" class=\"btn btn-primary\">Back</a>\n</body>'
+        testtext= '<p>A second motion</p></p>\n  </div>\n</div>\n<a href=\"/?start=2#motion-2\" class=\"btn btn-primary\">Back</a>'
         self.assertIn(str.encode(testtext), result.data)
 
     def test_vote(self):

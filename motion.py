@@ -26,7 +26,16 @@ class EscapeHtml(Extension):
 
 md = Markdown(app, extensions=[EscapeHtml()])
 
+class default_settings(object):
+    COPYRIGHTSTART="2017"
+    COPYRIGHTNAME="WPIA"
+    COPYRIGHTLINK="https://wpia.club"
+    IMPRINTLINK="https://documents.wpia.club/imprint.html"
+    DATAPROTECTIONLINK="https://documents.wpia.club/data_privacy_policy_html_pages_en.html"
+
+
 # Load config
+app.config.from_object('motion.default_settings')
 app.config.from_pyfile('config.py')
 
 
@@ -94,6 +103,23 @@ def lookup_user():
                 g.roles[a[0]].append(val)
     return None
 
+@app.context_processor
+def init_footer_variables():
+    if int(app.config.get("COPYRIGHTSTART"))<datetime.now().year:
+        version_year = "%s - %s" % (app.config.get("COPYRIGHTSTART"), datetime.now().year)
+    else:
+        version_year = datetime.now().year
+
+    return dict(
+        footer = dict( version_year=version_year, 
+            copyright_link=app.config.get("COPYRIGHTLINK"),
+            copyright_name=app.config.get("COPYRIGHTNAME"),
+            imprint_link=app.config.get("DATAPROTECTIONLINK"),
+            dataprotection_link=app.config.get("DATAPROTECTIONLINK")
+        )
+    )
+
+
 def get_allowed_cats(action):
     return g.roles.get(action, []);
 
@@ -148,7 +174,6 @@ def init_db():
                 db.prepare("UPDATE \"motion\" SET \"host\"=$1")(app.config.get("DEFAULT_HOST"))
                 db.prepare("ALTER TABLE \"motion\" ALTER COLUMN \"host\" SET NOT NULL")()
                 db.prepare("UPDATE \"schema_version\" SET \"version\"=3")()
-
 
 init_db()
 

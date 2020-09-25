@@ -9,7 +9,7 @@ virtualenv -p python3 .
 . bin/activate
 pip install -r requirements.txt
 ```
-Then edit config.py.example into config.py with your database connection
+Then edit config.py.example into config.py with your database connection and web site settings
 
 ## Development and debug
 
