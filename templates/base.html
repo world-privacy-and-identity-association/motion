@@ -56,5 +56,13 @@ form {
 <body>
 {%- block body %}
 {% endblock %}
+<!-- Footer -->
+  <footer class="page-footer">
+    <div class="footer-copyright text-center py-3">
+      <p>© {{footer.version_year}} Copyright: <a href="{{footer.copyright_link}}">{{footer.copyright_name}}</a> 
+      | <a href="{{footer.imprint_link}}">Imprint</a> 
+      | <a href="{{footer.dataprotection_link}}">Data protection</a></p>
+    </div>
+  </footer>
 </body>
 </html>

@@ -2,6 +2,13 @@ DATABASE="pg://dbserver/db"
 USER="..."
 PASSWORD="..."
 
+# Footer data: remove # at beginning of lines and adjust if needed
+#COPYRIGHTSTART="2017"
+#COPYRIGHTNAME="WPIA"
+#COPYRIGHTLINK="https://wpia.club"
+#IMPRINTLINK="https://documents.wpia.club/imprint.html"
+#DATAPROTECTIONLINK="https://documents.wpia.club/data_privacy_policy_html_pages_en.html"
+
 DEFAULT_HOST="hostname for migration from db version < 2"
 
 GROUP_PREFIX={'hostname': {'group1': 'g1', 'group2': 'g2'}} # motion types and their id-prefixes
