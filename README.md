@@ -49,7 +49,7 @@ To grant right use the following (here with vote right as example):
 
 Within the motion content markdown can be used for formatting e.g. 
 * To add a line break add two lines
-* to enter a link use `[text](https//domain.tld/link)`
+* to enter a link use `[text](https://domain.tld/link)`
 
 ## Settings for nginx
 
