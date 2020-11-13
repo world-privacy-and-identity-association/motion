@@ -2,11 +2,6 @@
 {% block body %}
 <div class="container">
 {%- if categories|length != 0 %}
-<div class="card">
-<div class="card-body">
-User: {{g.user}}
-</div>
-</div>
 <form action="/motion" method="POST" class="form-inline">
 <div class="motion card">
   <div class="motion-title card-heading alert-light from-group">

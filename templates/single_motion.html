@@ -11,19 +11,40 @@ Motion: {{motion.name}}
   </div>
   <div class="card-body">
     {%- for row in votes %}
-    <div>{{row.email}}: {{row.result}}</div>
+    <div>{{row.email}}: {{row.result}}{%- if row.proxyemail %} : given by {{row.proxyemail}}{%- endif %}</div>
     {%- endfor %}
   </div>
 </div>
 {%- endif %}
+
 {%- if motion.running %}
+
 {%- if may_vote %}
-<form action="/motion/{{motion.identifier}}/vote" method="POST">
+<div class="panel panel-info" id="votes">
+  <div class="panel-body">
+<h3>My vote</h3>
+{%- if proxyname %}
+Given by {{proxyname[0][0]}}
+{%- endif %}
+<form action="/motion/{{motion.identifier}}/vote/{{g.voter}}" method="POST">
 {%- for vote in ['yes','no','abstain'] %}
 <button type="submit" class="btn btn-{{ 'success' if vote == motion.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{vote}}</button>
 {%- endfor %}
 </form>
+
+{%- for p in proxyvote %}
+<h3>Vote for {{p.email}}</h3>
+{%- if p.owneremail and p.result%}
+Voted by {{p.owneremail}}
 {%- endif %}
+<form action="/motion/{{motion.identifier}}/vote/{{p.voter_id}}" method="POST">
+{%- for vote in ['yes','no','abstain'] %}
+<button type="submit" class="btn btn-{{ 'success' if vote == p.result else 'primary' }}" name="vote" value="{{vote}}" id="vote-{{vote}}">{{vote}}</button>
+{%- endfor %}
+</form>
+{%- endfor %}
+{%- endif %}
+
 {%- if may_cancel %}
 <form action="/motion/{{motion.identifier}}/cancel" method="POST" class="form-inline">
 <input type="text" placeholder="cancelation reason" name="reason" class="form-control" required="yes">
@@ -35,6 +56,9 @@ Motion: {{motion.name}}
 <button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">Finish</button></br>
 </form>
 {%- endif %}
+
 {%- endif %}
 <a href="/?start={{motion.id}}#motion-{{motion.id}}" class="btn btn-primary">Back</a>
 {%- endblock %}
+  </div>
+</div>

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="container">
+<form action="/proxy/add" method="POST">
+  <table>
+  <tr>
+    <td>Voter</td>
+    <td>Proxy</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>
+      <select class="float form-control" name="voter">
+    {%- for voter in voters %}
+        <option>{{voter.email}}</option>
+    {%- endfor %}
+      </select>
+    </td>
+    <td>
+      <select class="float form-control" name="proxy">
+        {%- for voter in voters %}
+          <option>{{voter.email}}</option>
+        {%- endfor %}
+      </select>
+    </td>
+    <td>
+      <button type="submit" class="btn btn-primary">Add</button>
+    </td>
+  </tr>
+  </table>
+</form>
+{%- if proxies %}
+<form action="/proxy/revoke" method="POST">
+<div class="motion card" id="votes">
+  <div class="card-heading text-white bg-info">
+    Granted Proxies
+  </div>
+  <div class="card-body">
+    <table>
+      <thead>
+        <th>Voter</th>
+        <th>Proxy</th>
+        <th></th>
+      </thead>
+      {%- for row in proxies %}
+      <tr>
+        <td>{{row.voter_email}}</td>
+        <td>{{row.proxy_email}}</td>
+        <td><button type="submit" class="btn btn-danger" name="id" value="{{row.id}}">Revoke</button></td>
+      </tr>
+      {%- endfor %}
+    </table>
+  </div>
+</div>
+</form>
+{%- endif %}
+<form action="/proxy/revokeall" method="POST">
+  <button type="submit" class="btn btn-danger">Revoke ALL</button>
+</form>
+</div>
+{%- endblock %}
