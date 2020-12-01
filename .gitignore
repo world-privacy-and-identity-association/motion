@@ -11,3 +11,6 @@
 # emacs
 \#*\#
 *~
+messages.pot
+messages.mo
+messages.po

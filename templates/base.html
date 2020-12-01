@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>{% block title %}Motion list{% endblock %}</title>
+<title>{% block title %}{{_('Motion list')}}{% endblock %}</title>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 <style type="text/css">
 .form-inline .motion {
   width: 100%;
@@ -58,29 +60,39 @@ form {
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="../">{{'Motion list'}}</a>
+  <a class="navbar-brand" href="../">{{_('Motion list')}}</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
    <div class="collapse navbar-collapse" id="navbarNavDropdown">
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" href="/">{{'Home'}}</a>
+        <a class="nav-link" href="/">{{_('Home')}}</a>
       </li>
 {%- if may_proxyadmin %}
       <li class="nav-item">
-        <a class="nav-link" href="/proxy">{{'Proxy management'}}</a>
+        <a class="nav-link" href="/proxy">{{_('Proxy management')}}</a>
       </li>
 {%- endif %}
       <li class="nav-item">
-        <a class="nav-link">{{'User'}}: {{g.user}}
+        <a class="nav-link">{{_('User')}}: {{g.user}}
 {%- if g.proxies_given %}
-         <br/>proxy granted to: {{g.proxies_given}}
+         <br/>{{_('proxy granted to')}}: {{g.proxies_given}}
 {%- endif %}
 {%- if g.proxies_received %}
-         <br/>holds proxy of: {{g.proxies_received}}
+         <br/>{{_('holds proxy of')}}: {{g.proxies_received}}
 {%- endif %}
         </a>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{_('Language')}}
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+         {%- for k, v in languages.items() %}
+           <a class="dropdown-item" href="/language/{{k}}">{{v}}</a>
+         {%- endfor %}
+        </div>
       </li>
     </ul>
   </div>
@@ -90,9 +102,9 @@ form {
 <!-- Footer -->
   <footer class="page-footer">
     <div class="footer-copyright text-center py-3">
-      <p>&copy; {{footer.version_year}} Copyright: <a href="{{footer.copyright_link}}">{{footer.copyright_name}}</a> 
-      | <a href="{{footer.imprint_link}}">Imprint</a> 
-      | <a href="{{footer.dataprotection_link}}">Data protection</a></p>
+      <p>&copy; {{footer.version_year}} {{_('Copyright')}}: <a href="{{footer.copyright_link}}">{{footer.copyright_name}}</a> 
+      | <a href="{{footer.imprint_link}}">{{_('Imprint')}}</a> 
+      | <a href="{{footer.dataprotection_link}}">{{_('Data protection')}}</a></p>
     </div>
   </footer>
 </body>

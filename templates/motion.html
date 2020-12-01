@@ -5,32 +5,33 @@
 {%- elif motion.yes is defined %}{% if motion.yes != None and motion.no != None and motion.yes > motion.no %} alert-success{% else %} alert-danger{% endif %}
 {%- else %} bg-light{%- endif -%}
 ">
-    <span class="title-text">{{motion.name}}</span> ({{ 'Running' if motion.running else ('Canceled' if motion.canceled != None else 'Finished') }})
+    <span class="title-text">{{motion.name}}</span> ({{ _('Running') if motion.running else (_('Canceled') if motion.canceled != None else _('Finished')) }})
     <span class="motion-type">{{motion.type}}</span>
     <div># {{motion.identifier}}
 {%- if singlemotion == False %}
-    <a class="btn btn-primary" href="/motion/{{motion.identifier}}" role="button">{{ 'Vote' if motion.running else 'Result' }}</a>
+    <a class="btn btn-primary" href="/motion/{{motion.identifier}}" role="button">{{ _('Vote') if motion.running else _('Result') }}</a>
 {%- endif %}
     </div>
     <div class="date">
-      <div>Proposed: {{motion.posed|timestamp}} (UTC) by {{motion.poser}}</div>
+      <div>{{_('Proposed')}}: {{_('%(dt)s (UTC) by %(user)s', dt=motion.posed|timestamp, user=motion.poser)}}</div>
 {%- if motion.canceled != None %}
-      <div>Canceled: {{motion.canceled|timestamp}} (UTC) by {{motion.canceler}}</div></div>
+      <div>{{_('Canceled')}}: {{_('%(dt)s (UTC) by %(user)s', dt=motion.canceled|timestamp, user=motion.poser)}}</div>
 {%- else %}
-      <div>Votes until: {{motion.deadline|timestamp}} (UTC)</div></div>
+      <div>{{_('Votes until')}}: {{_('%(dt)s (UTC)', dt=motion.deadline|timestamp)}}</div>
 {%- endif %}
+     </div>
   </div>
   <div class="card-body">
     <p>{{motion.content|markdown}}</p>
 {%- if motion.yes or motion.no or motion.abstain %}
     <p>
 {%- for vote in ['yes', 'no', 'abstain'] %}
-{{vote|capitalize}} <span class="badge badge-pill badge-secondary">{{motion[vote]}}</span><br>
+{{_(vote)|capitalize}} <span class="badge badge-pill badge-secondary">{{motion[vote]}}</span><br>
 {%- endfor %}
     </p>
 {%- endif %}
 {%- if motion.canceled != None %}
-    <p>Cancelation reason: {{motion.cancelation_reason}}</p>
+    <p>{{_('Cancelation reason')}}: {{motion.cancelation_reason}}</p>
 {%- endif %}
   </div>
 {%- block content %}{% endblock %}
