@@ -11,6 +11,7 @@ from markdown.extensions import Extension
 from datetime import date, time, datetime
 from flask_language import Language, current_language
 import gettext
+import click
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -444,3 +445,15 @@ def revoke_proxy_all():
 def set_language(language):
     lang.change_language(language)
     return rel_redirect("/")
+
+@app.cli.command("create-user")
+@click.argument("email")
+def create_user(email):
+    db = get_db()
+    with db.xact():
+        rv = db.prepare("SELECT id FROM voter WHERE lower(email)=lower($1)")(email)
+        messagetext="User '%s' already exists." % (email)
+        if len(rv) == 0:
+            db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(email)
+            messagetext="User '%s' inserted." % (email)
+    click.echo(messagetext)

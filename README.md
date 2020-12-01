@@ -180,3 +180,24 @@ Add Publish JUnit test result report - test report XMLs
 ```
 python_tests_xml/*
 ```
+
+## Add user via command line
+
+For linux start with
+```
+FLASK_APP=motion.py
+```
+
+For windows start with
+```
+set FLASK_APP=motion.py
+
+```
+
+To add a user use this command
+```
+flask create-user "email address"
+
+```
+
+The application will return a message for the success.
