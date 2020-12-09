@@ -1,5 +1,5 @@
 from datetime import datetime
-from .test_basics import BasicTest
+from tests.test_basics import BasicTest
 
 # no specific rights required
 class GeneralTests(BasicTest):
