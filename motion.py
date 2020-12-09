@@ -422,7 +422,7 @@ def add_proxy():
         return _('Error, proxy allready given.'), 400
     rv = get_db().prepare("SELECT COUNT(id) as c FROM proxy WHERE proxy_id=$1 AND revoked is NULL GROUP BY proxy_id")(proxyid);
     if len(rv) != 0:
-        if rv[0].get("c") >= max_proxy:
+        if rv[0].get("c") is None or rv[0].get("c") >= max_proxy:
             return _("Error, Max proxy for '%s' reached.") % (proxy), 400
     rv = get_db().prepare("INSERT INTO proxy(voter_id, proxy_id, granted_by) VALUES ($1,$2,$3)")(voterid, proxyid, g.voter)
     return rel_redirect("/proxy")
