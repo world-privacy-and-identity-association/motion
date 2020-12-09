@@ -7,7 +7,7 @@ def runner(output='python_tests_xml'):
     )
 
 def find_tests():
-    return unittest.TestLoader().discover('tests', 'test_motion.py')
+    return unittest.TestLoader().discover('tests', 'test_*.py')
 
 if __name__ == "__main__":
     runner().run(find_tests())

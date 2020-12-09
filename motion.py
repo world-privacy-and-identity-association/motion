@@ -39,6 +39,7 @@ class default_settings(object):
     COPYRIGHTLINK="https://wpia.club"
     IMPRINTLINK="https://documents.wpia.club/imprint.html"
     DATAPROTECTIONLINK="https://documents.wpia.club/data_privacy_policy_html_pages_en.html"
+    MAX_PROXY=2
 
 
 # Load config
