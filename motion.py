@@ -453,8 +453,8 @@ def create_user(email):
     db = get_db()
     with db.xact():
         rv = db.prepare("SELECT id FROM voter WHERE lower(email)=lower($1)")(email)
-        messagetext="User '%s' already exists." % (email)
+        messagetext=_("User '%s' already exists.") % (email)
         if len(rv) == 0:
             db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(email)
-            messagetext="User '%s' inserted." % (email)
+            messagetext=_("User '%s' inserted.") % (email)
     click.echo(messagetext)
