@@ -26,10 +26,12 @@ class GeneralTests(BasicTest):
         user = 'John Doe'
         runner = CliRunner()
         result = runner.invoke(create_user, [user])
+        assert result.exit_code == 0
         self.assertIn("User 'John Doe' inserted.", result.output)
 
         rv = db_select(self,"SELECT email FROM voter WHERE lower(email)=lower($1)", user)
         self.assertIn(user, rv[0].get("email"))
 
         result = runner.invoke(create_user, [user])
+        assert result.exit_code == 0
         self.assertIn("User 'John Doe' already exists.", result.output)
