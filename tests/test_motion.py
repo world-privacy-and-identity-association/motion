@@ -400,6 +400,19 @@ class CreateMotionTests(BasicTest):
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Forbidden'), response.data)
 
+    def test_SeeCancelMotion(self):
+        self.db_sampledata()
+
+        motion='g1.20200402.004'
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">Cancel</button>'
+        self.assertIn(str.encode(testtext), result.data)
+
+        motion='g1.20200402.004'
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': 'testuser/vote:*'}, follow_redirects=True)
+        testtext= '<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">Cancel</button>'
+        self.assertNotIn(str.encode(testtext), result.data)
+
     def test_cancelMotion(self):
         self.db_sampledata()
 
@@ -431,6 +444,19 @@ class CreateMotionTests(BasicTest):
         response = self.cancelMotion(user, motion, reason)
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Error, motion was canceled'), response.data)
+
+    def test_SeeFinishMotion(self):
+        self.db_sampledata()
+
+        motion='g1.20200402.004'
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= '<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">Finish</button>'
+        self.assertIn(str.encode(testtext), result.data)
+
+        motion='g1.20200402.004'
+        result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': 'testuser/vote:*'}, follow_redirects=True)
+        testtext= '<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">Finish</button>'
+        self.assertNotIn(str.encode(testtext), result.data)
 
     def test_finishMotion(self):
         self.db_sampledata()
