@@ -24,7 +24,7 @@ class GeneralTests(BasicTest):
 
     def test_create_user(self):
         user = 'John Doe'
-        runner = CliRunner()
+        runner = app.test_cli_runner()
         result = runner.invoke(create_user, [user])
         assert result.exit_code == 0
         self.assertIn("User 'John Doe' inserted.", result.output)
