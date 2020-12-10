@@ -11,6 +11,7 @@ from markdown.extensions import Extension
 from datetime import date, time, datetime
 from flask_language import Language, current_language
 import gettext
+import click
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -38,6 +39,7 @@ class default_settings(object):
     COPYRIGHTLINK="https://wpia.club"
     IMPRINTLINK="https://documents.wpia.club/imprint.html"
     DATAPROTECTIONLINK="https://documents.wpia.club/data_privacy_policy_html_pages_en.html"
+    MAX_PROXY=2
 
 
 # Load config
@@ -420,7 +422,7 @@ def add_proxy():
         return _('Error, proxy allready given.'), 400
     rv = get_db().prepare("SELECT COUNT(id) as c FROM proxy WHERE proxy_id=$1 AND revoked is NULL GROUP BY proxy_id")(proxyid);
     if len(rv) != 0:
-        if rv[0].get("c") >= max_proxy:
+        if rv[0].get("c") is None or rv[0].get("c") >= max_proxy:
             return _("Error, Max proxy for '%s' reached.") % (proxy), 400
     rv = get_db().prepare("INSERT INTO proxy(voter_id, proxy_id, granted_by) VALUES ($1,$2,$3)")(voterid, proxyid, g.voter)
     return rel_redirect("/proxy")
@@ -444,3 +446,15 @@ def revoke_proxy_all():
 def set_language(language):
     lang.change_language(language)
     return rel_redirect("/")
+
+@app.cli.command("create-user")
+@click.argument("email")
+def create_user(email):
+    db = get_db()
+    with db.xact():
+        rv = db.prepare("SELECT id FROM voter WHERE lower(email)=lower($1)")(email)
+        messagetext=_("User '%s' already exists.") % (email)
+        if len(rv) == 0:
+            db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(email)
+            messagetext=_("User '%s' inserted.") % (email)
+    click.echo(messagetext)
