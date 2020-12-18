@@ -372,7 +372,7 @@ def show_motion(motion):
     if may("audit", resultmotion[0].get("type")) and not resultmotion[0].get("running") and not resultmotion[0].get("canceled"):
         votes = get_db().prepare("SELECT vote.result, voter.email FROM vote INNER JOIN voter ON voter.id = vote.voter_id WHERE vote.motion_id=$1")(resultmotion[0].get("id"));
         votes = get_db().prepare("SELECT vote.result, voter.email, CASE voter.email WHEN proxy.email THEN NULL ELSE proxy.email END as proxyemail FROM vote INNER JOIN voter ON voter.id = vote.voter_id INNER JOIN voter as proxy ON proxy.id = vote.proxy_id WHERE vote.motion_id=$1")(resultmotion[0].get("id"));
-    return render_template('single_motion.html', motion=resultmotion[0], may_vote=may("vote", resultmotion[0].get("type")), may_cancel=may("cancel", resultmotion[0].get("type")), votes=votes, proxyvote=resultproxyvote, proxyname=resultproxyname, languages=get_languages())
+    return render_template('single_motion.html', motion=resultmotion[0], may_vote=may("vote", resultmotion[0].get("type")), may_cancel=may("cancel", resultmotion[0].get("type")), may_finish=may("finish", resultmotion[0].get("type")), votes=votes, proxyvote=resultproxyvote, proxyname=resultproxyname, languages=get_languages())
 
 @app.route("/motion/<string:motion>/vote/<string:voter>", methods=['POST'])
 @validate_motion_access_vote('vote')
