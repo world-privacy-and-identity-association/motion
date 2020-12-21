@@ -200,4 +200,18 @@ flask create-user "email address" "host"
 
 ```
 
-The application will return a message for the success.
+The application will return a message for success.
+
+To mask motions use this command
+```
+flask motion_masking motionidentifier motionurl host"
+
+```
+
+where:
+
+* motionidentifier - the motion identifier or left part of it which should be cleaned
+* motionurl - an url to a motion that is the reason for the cleanup
+* host - host where the motions are located
+
+The application will return a message for success.
