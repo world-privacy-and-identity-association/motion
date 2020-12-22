@@ -1,6 +1,5 @@
 from datetime import datetime
 from tests.test_basics import BasicTest
-import postgresql
 from motion import app
 
 # no specific rights required
@@ -478,6 +477,24 @@ class CreateMotionTests(BasicTest):
         response = self.finishMotion(user, motion)
         self.assertEqual(response.status_code, 403)
         self.assertIn(str.encode('Error, out of time'), response.data)
+
+    def test_createMotionWait(self):
+        # test no limit given
+        self.db_sampledata()
+        title='My Motion'
+        content='My body'
+        response = self.createMotion(user, title, content, '3', 'group1')
+        self.assertEqual(response.status_code, 302)
+
+        # test different host
+        app.config.update(MOTION_WAIT_MINUTES={'127.0.0.1:5001':1})
+        response = self.createMotion(user, title, content, '3', 'group1')
+        self.assertEqual(response.status_code, 302)
+
+        # test 3 minutes
+        app.config.update(MOTION_WAIT_MINUTES={'127.0.0.1:5000':3})
+        response = self.createMotion(user, title, content, '3', 'group1')
+        self.assertIn(str.encode('Error, time between last motion to short. The current setting is 3 minute(s).'), response.data)
 
 class AuditMotionTests(BasicTest):
 
