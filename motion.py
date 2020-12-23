@@ -29,6 +29,7 @@ gettext.install('motion')
 class EscapeHtml(Extension):
     def extendMarkdown(self, md, md_globals):
         del md.preprocessors['html_block']
+        del md.postprocessors['raw_html']
         del md.inlinePatterns['html']
 
 md = Markdown(app, extensions=[EscapeHtml()])
@@ -296,7 +297,10 @@ def put_motion():
         if len(sr) == 0 or sr[0][0] is None:
             ident=prefix.per_host[cat]+"."+t.strftime("%Y%m%d")+".001"
         else:
-            ident=prefix.per_host[cat]+"."+t.strftime("%Y%m%d")+"."+("%03d" % (int(sr[0][0].split(".")[2])+1))
+            nextId = int(sr[0][0].split(".")[2])+1
+            if nextId >= 1000:
+                return _('Too many motions for this day'), 500
+            ident=prefix.per_host[cat]+"."+t.strftime("%Y%m%d")+"."+("%03d" % nextId)
         p = db.prepare("INSERT INTO motion(\"name\", \"content\", \"deadline\", \"posed_by\", \"type\", \"identifier\", \"host\") VALUES($1, $2, CURRENT_TIMESTAMP + $3 * interval '1 days', $4, $5, $6, $7)")
         p(title, content, time, g.voter, cat, ident, request.host)
     return rel_redirect("/")
