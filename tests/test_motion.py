@@ -1,5 +1,7 @@
 from datetime import datetime
 from tests.test_basics import BasicTest
+import postgresql
+from motion import app
 
 # no specific rights required
 class GeneralTests(BasicTest):
@@ -502,6 +504,8 @@ class ProxyManagementTests(BasicTest):
         self.init_test()
         global user
         user='testuser/proxyadmin:*'
+        global userid
+        userid=4
         self.db_sampledata()
 
     def tearDown(self):
@@ -564,6 +568,12 @@ class ProxyManagementTests(BasicTest):
         response = self.addProxy(user, voter, proxy)
         self.assertEqual(response.status_code, 400)
         self.assertIn(str.encode('Error, voter equals proxy.'), response.data)
+        
+        voter='User A'
+        proxy='User Z'
+        response = self.addProxy(user, voter, proxy)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, proxy not found.'), response.data)
 
         voter='User A'
         proxy='User B'
@@ -702,9 +712,48 @@ class ProxyManagementTests(BasicTest):
         result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
         testtext= '<table>\n      '\
             + '<thead>\n        '\
-            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n    '\
+            + '<th>Voter</th>\n        <th>Proxy</th>\n        <th></th>\n      </thead>\n'\
             + '</table>\n'
+        self.assertNotIn(str.encode(testtext), result.data)
+
+        proxytest="proxytest"
+        with self.open_DB() as db:
+            db.prepare("INSERT INTO voter(\"email\", \"host\") VALUES($1, $2)")(proxytest, '127.0.0.1:5001')
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+
+        response = self.addProxy(user, proxytest, 'testuser')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, voter not found.'), response.data)
+
+        response = self.addProxy(user, 'testuser', proxytest)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(str.encode('Error, proxy not found.'), response.data)
+
+    def test_see_proxy_host_only(self):
+        proxytest="proxytest"
+        with self.open_DB() as db:
+            db.prepare("INSERT INTO voter(\"email\", \"host\") VALUES($1, $2)")(proxytest, '127.0.0.1:5001')
+        result = self.app.get('proxy', environ_base={'USER_ROLES': user}, follow_redirects=True)
+        testtext= 'div class="container">\n<form action="/proxy/add" method="POST">'
         self.assertIn(str.encode(testtext), result.data)
+        testtext= 'proxy granted to:'
+        self.assertNotIn(str.encode(testtext), result.data)
+        testtext= 'holds proxy of:'
+        self.assertNotIn(str.encode(testtext), result.data)
+        testtext= '<select class="float form-control" name="voter">\n        '\
+            + '<option>User A</option>\n        <option>User B</option>\n        '\
+            + '<option>User C</option>\n        '\
+            + '<option>testuser</option>\n      '\
+            + '</select>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        testtext= '<select class="float form-control" name="proxy">\n          '\
+            + '<option>User A</option>\n          '\
+            + '<option>User B</option>\n          '\
+            + '<option>User C</option>\n          '\
+            + '<option>testuser</option>\n      '\
+            + '</select>\n'
+        self.assertIn(str.encode(testtext), result.data)
+        self.assertNotIn(str.encode(proxytest), result.data)
 
 class ProxyVoteTests(BasicTest):
 

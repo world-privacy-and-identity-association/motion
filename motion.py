@@ -111,10 +111,10 @@ def lookup_user():
 
     db = get_db()
     with db.xact():
-        rv = db.prepare("SELECT id FROM voter WHERE email=$1")(user)
+        rv = db.prepare("SELECT id FROM voter WHERE email=$1 AND host=$2")(user, request.host)
         if len(rv) == 0:
-            db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(user)
-            rv = db.prepare("SELECT id FROM voter WHERE email=$1")(user)
+            db.prepare("INSERT INTO voter(\"email\", \"host\") VALUES($1, $2)")(user, request.host)
+            rv = db.prepare("SELECT id FROM voter WHERE email=$1 AND host=$2")(user, request.host)
         g.voter = rv[0].get("id");
         g.proxies_given = ""
         rv = db.prepare("SELECT email, voter_id FROM voter, proxy WHERE proxy.proxy_id = voter.id AND proxy.revoked IS NULL AND proxy.voter_id = $1 ")(g.voter)
@@ -171,11 +171,15 @@ def may_admin(action):
     return action in g.roles
 
 def get_voters():
-    rv = get_db().prepare("SELECT email FROM voter")
+    rv = get_db().prepare("SELECT email FROM voter WHERE host=$1")(request.host)
     return rv
 
 def get_all_proxies():
-    rv = get_db().prepare("SELECT p.id as id, v1.email as voter_email, v1.id as voterid, v2.email as proxy_email, v2.id as proxyid FROM voter AS v1, voter AS v2, proxy AS p WHERE v2.id = p.proxy_id AND v1.id = p.voter_id AND p.revoked is NULL ORDER BY voter_email, proxy_email")
+    rv = get_db().prepare("SELECT p.id as id, v1.email as voter_email, v1.id as voterid, "\
+                             + "v2.email as proxy_email, v2.id as proxyid "\
+                             + "FROM voter AS v1, voter AS v2, proxy AS p "\
+                             + "WHERE v2.id = p.proxy_id AND v1.id = p.voter_id AND p.revoked is NULL "\
+                             + "AND v1.host=$1 AND v2.host=$1 ORDER BY voter_email, proxy_email")(request.host)
     return rv
 
 @app.teardown_appcontext
@@ -236,6 +240,24 @@ def init_db():
             with app.open_resource('sql/from_4.sql', mode='r') as f:
                 db.execute(f.read())
                 db.prepare("UPDATE \"schema_version\" SET \"version\"=5")()
+
+        if ver < 6:
+            with app.open_resource('sql/from_5.sql', mode='r') as f:
+                db.execute(f.read())
+                rv=db.prepare("INSERT INTO voter (email, host) (SELECT vt.email, m.host FROM motion AS m, voter AS vt, vote as v "\
+                             + "WHERE (m.id=v.motion_id AND v.voter_id = vt.id) OR (m.id=v.motion_id AND v.proxy_id = vt.id) "\
+                             + "GROUP BY m.host, vt.email ORDER BY m.host, vt.email)")()
+                rv=db.prepare("UPDATE vote SET voter_id = "\
+                             + "(SELECT v_new.id FROM motion AS m, voter AS v_new, voter as v_old "\
+                             + "WHERE v_new.email = v_old.email AND v_old.id = vote.voter_id AND "\
+                             + "vote.motion_id = m.id AND m.host = v_new.host AND v_old.host is NULL)")()
+                rv=db.prepare("UPDATE vote SET proxy_id = "\
+                             + "(SELECT v_new.id FROM motion AS m, voter AS v_new, voter as v_old "\
+                             + "WHERE v_new.email = v_old.email AND v_old.id = vote.proxy_id AND "\
+                             + "vote.motion_id = m.id AND m.host = v_new.host AND v_old.host is NULL)")()
+                db.prepare("DELETE FROM voter WHERE host IS Null")()
+                db.prepare("ALTER TABLE \"voter\" ALTER COLUMN \"host\" SET NOT NULL")()
+                db.prepare("UPDATE \"schema_version\" SET \"version\"=6")()
 
 init_db()
 
@@ -409,11 +431,11 @@ def add_proxy():
     proxy=request.form.get("proxy", "")
     if voter == proxy :
         return _('Error, voter equals proxy.'), 400
-    rv = get_db().prepare("SELECT id FROM voter WHERE email=$1")(voter);
+    rv = get_db().prepare("SELECT id FROM voter WHERE email=$1 AND host=$2")(voter, request.host);
     if len(rv) == 0:
         return _('Error, voter not found.'), 400
     voterid = rv[0].get("id")
-    rv = get_db().prepare("SELECT id FROM voter WHERE email=$1")(proxy);
+    rv = get_db().prepare("SELECT id, host FROM voter WHERE email=$1 AND host=$2")(proxy, request.host);
     if len(rv) == 0:
         return _('Error, proxy not found.'), 400
     proxyid = rv[0].get("id")
@@ -449,12 +471,13 @@ def set_language(language):
 
 @app.cli.command("create-user")
 @click.argument("email")
-def create_user(email):
+@click.argument("host")
+def create_user(email, host):
     db = get_db()
     with db.xact():
-        rv = db.prepare("SELECT id FROM voter WHERE lower(email)=lower($1)")(email)
-        messagetext=_("User '%s' already exists.") % (email)
+        rv = db.prepare("SELECT id FROM voter WHERE lower(email)=lower($1) AND host=$2")(email, host)
+        messagetext=_("User '%s' already exists on %s.") % (email, host)
         if len(rv) == 0:
-            db.prepare("INSERT INTO voter(\"email\") VALUES($1)")(email)
-            messagetext=_("User '%s' inserted.") % (email)
+            db.prepare("INSERT INTO voter(\"email\", \"host\") VALUES($1, $2)")(email, host)
+            messagetext=_("User '%s' inserted to %s.") % (email, host)
     click.echo(messagetext)

@@ -29,7 +29,6 @@
   </tr>
   </table>
 </form>
-{%- if proxies %}
 <form action="/proxy/revoke" method="POST">
 <div class="motion card" id="votes">
   <div class="card-heading text-white bg-info">
@@ -42,6 +41,7 @@
         <th>{{_('Proxy')}}</th>
         <th></th>
       </thead>
+      {%- if proxies %}
       {%- for row in proxies %}
       <tr>
         <td>{{row.voter_email}}</td>
@@ -49,11 +49,11 @@
         <td><button type="submit" class="btn btn-danger" name="id" value="{{row.id}}">{{_('Revoke')}}</button></td>
       </tr>
       {%- endfor %}
+      {%- endif %}
     </table>
   </div>
 </div>
 </form>
-{%- endif %}
 <form action="/proxy/revokeall" method="POST">
   <button type="submit" class="btn btn-danger">{{_('Revoke all')}}</button>
 </form>

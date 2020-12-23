@@ -1,0 +1,1 @@
+ALTER TABLE "voter" ADD COLUMN "host" VARCHAR(500) NULL;
