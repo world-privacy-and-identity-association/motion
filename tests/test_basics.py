@@ -10,6 +10,7 @@ app.config.update(
     GROUP_PREFIX = {'127.0.0.1:5000': {'group1': 'g1', 'group2': 'g2'}},
     DURATION = {'127.0.0.1:5000':[3, 7, 14]},
     SERVER_NAME = '127.0.0.1:5000',
+    DEFAULT_HOST = '127.0.0.1:5000',
     MAX_PROXY=2
 )
 
@@ -33,7 +34,6 @@ class BasicTest(TestCase):
             environ_base={'USER_ROLES': user},
             data=dict(vote=vote)
         )
-        
 
     def createMotion(self, user, motiontitle, motioncontent, days, category):
         return self.app.post(
@@ -74,13 +74,17 @@ class BasicTest(TestCase):
             + '\nNo <span class=\"badge badge-pill badge-secondary\">'+str(no)+'</span><br>'\
             + '\nAbstain <span class=\"badge badge-pill badge-secondary\">'+str(abstain)+'</span>'
 
+
+    def open_DB(self):
+        return postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD"))
+
     # functions to clear database
     def db_clear(self):
-        with postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD")) as db:
+        with self.open_DB() as db:
             with app.open_resource('sql/schema.sql', mode='r') as f:
                 db.execute(f.read())
 
     def db_sampledata(self):
-        with postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD")) as db:
+        with self.open_DB() as db:
             with app.open_resource('sql/sample_data.sql', mode='r') as f:
                 db.execute(f.read())

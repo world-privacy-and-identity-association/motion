@@ -1,8 +1,5 @@
 DROP TABLE IF EXISTS voter;
-CREATE TABLE voter (id serial NOT NULL,
-                   email VARCHAR(255) NOT NULL,
-                   host VARCHAR(500) NOT NULL,
-                   PRIMARY KEY(id));
+CREATE TABLE voter (id serial NOT NULL, email VARCHAR(255) NOT NULL, PRIMARY KEY(id));
 
 
 DROP TABLE IF EXISTS motion;
@@ -45,4 +42,4 @@ CREATE INDEX proxy_proxy ON proxy (proxy_id);
 
 DROP TABLE IF EXISTS schema_version;
 CREATE TABLE schema_version (version INTEGER NOT NULL);
-INSERT INTO schema_version(version) VALUES(6);
+INSERT INTO schema_version(version) VALUES(5);

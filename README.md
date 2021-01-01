@@ -196,7 +196,7 @@ set FLASK_APP=motion.py
 
 To add a user use this command
 ```
-flask create-user "email address"
+flask create-user "email address" "host"
 
 ```
 
