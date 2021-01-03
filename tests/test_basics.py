@@ -17,7 +17,6 @@ app.config.update(
 app.config['TESTING'] = True
 app.config['DEBUG'] = False
 
-
 class BasicTest(TestCase):
 
     def init_test(self):

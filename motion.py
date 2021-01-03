@@ -61,6 +61,7 @@ class ConfigProxy:
 prefix = ConfigProxy("GROUP_PREFIX")
 times = ConfigProxy("DURATION")
 debuguser = ConfigProxy("DEBUGUSER")
+motion_wait_minutes = ConfigProxy("MOTION_WAIT_MINUTES")
 
 max_proxy=app.config.get("MAX_PROXY")
 
@@ -262,6 +263,17 @@ def init_db():
 
 init_db()
 
+def is_in_ratelimit(group):
+    rv = get_db().prepare("SELECT EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - posed)) AS timedifference FROM motion WHERE type=$1 AND host=$2 ORDER BY posed DESC LIMIT 1")(group, request.host)
+    if len(rv) == 0:
+        return True
+    rate_limit = motion_wait_minutes.per_host
+    if rate_limit is None:
+        rate_limit = 0
+    if rv[0]['timedifference'] > rate_limit*60:
+        return True
+    else:
+        return _('Error, time between last motion to short. The current setting is %s minute(s).') % (str(rate_limit))
 
 @app.route("/")
 def main():
@@ -309,6 +321,9 @@ def put_motion():
     content=content.strip()
     if content =='':
         return _('Error, missing content'), 400
+    ratelimit = is_in_ratelimit(cat)
+    if ratelimit is not True:
+        return ratelimit, 400
 
     db = get_db()
     with db.xact():
