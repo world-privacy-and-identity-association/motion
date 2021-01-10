@@ -43,6 +43,17 @@ CREATE TABLE proxy (id serial NOT NULL,
 CREATE INDEX proxy_voter ON proxy (voter_id);
 CREATE INDEX proxy_proxy ON proxy (proxy_id);
 
+DROP TABLE IF EXISTS adminlog;
+DROP TYPE IF EXISTS "admin_log";
+CREATE TYPE "admin_log" AS ENUM ('motionmasking', 'proxygranted', 'proxyrevoked', 'proxyrevokedall');
+CREATE TABLE adminlog (id serial NOT NULL,
+                   user_id INTEGER NOT NULL,
+                   action admin_log NOT NULL,
+                   comment text NULL,
+                   action_user_id INTEGER NOT NULL,
+                   actiontime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                   PRIMARY KEY(id));
+
 DROP TABLE IF EXISTS schema_version;
 CREATE TABLE schema_version (version INTEGER NOT NULL);
-INSERT INTO schema_version(version) VALUES(6);
+INSERT INTO schema_version(version) VALUES(7);

@@ -73,10 +73,36 @@ class BasicTest(TestCase):
             + '\nNo <span class=\"badge badge-pill badge-secondary\">'+str(no)+'</span><br>'\
             + '\nAbstain <span class=\"badge badge-pill badge-secondary\">'+str(abstain)+'</span>'
 
-
+    # functions handling or using database
     def open_DB(self):
         return postgresql.open(app.config.get("DATABASE"), user=app.config.get("USER"), password=app.config.get("PASSWORD"))
 
+    def db_select(self, sql, parameter):
+        with self.open_DB() as db:
+            rv = db.prepare(sql)(parameter)
+            return rv
+
+    def db_select2(self, sql, parameter, parameter2):
+        with self.open_DB() as db:
+            rv = db.prepare(sql)(parameter, parameter2)
+            return rv
+
+    def recordCountLog(self, parameter):
+        return self.recordCount("SELECT * FROM adminlog WHERE action=$1", parameter)
+
+    def recordCount(self, sql, parameter):
+        rv = self.db_select(sql, parameter)
+        return len(rv)
+
+    def logRecordDetailsTest(self, parameter, recordno, voterid, comment, actionuserid):
+        rv = self.db_select("SELECT * FROM adminlog WHERE action=$1 ORDER BY id", parameter)
+        self.assertEqual(voterid, rv[recordno].get("user_id"))
+        if comment:
+            self.assertEqual(comment, rv[recordno].get("comment"))
+        else:
+            self.assertEqual('', rv[recordno].get("comment"))
+        self.assertEqual(actionuserid, rv[recordno].get("action_user_id"))
+    
     # functions to clear database
     def db_clear(self):
         with self.open_DB() as db:

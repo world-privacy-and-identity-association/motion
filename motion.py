@@ -12,6 +12,7 @@ from datetime import date, time, datetime
 from flask_language import Language, current_language
 import gettext
 import click
+import re
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -261,6 +262,11 @@ def init_db():
                 db.prepare("ALTER TABLE \"voter\" ALTER COLUMN \"host\" SET NOT NULL")()
                 db.prepare("UPDATE \"schema_version\" SET \"version\"=6")()
 
+        if ver < 7:
+            with app.open_resource('sql/from_6.sql', mode='r') as f:
+                db.execute(f.read())
+                db.prepare("UPDATE \"schema_version\" SET \"version\"=7")()
+
 init_db()
 
 def is_in_ratelimit(group):
@@ -304,6 +310,12 @@ def rel_redirect(loc):
     r = redirect(loc)
     r.autocorrect_location_header = False
     return r
+
+def write_proxy_log(userid, action, comment):
+    get_db().prepare("INSERT INTO adminlog(user_id, action, comment, action_user_id) VALUES($1, $2, $3, $4)")(userid, action, comment, g.voter)
+
+def write_masking_log(comment):
+    get_db().prepare("INSERT INTO adminlog(user_id, action, comment, action_user_id) VALUES($1, 'motionmasking', $2, $1)")(0, comment)
 
 @app.route("/motion", methods=['POST'])
 def put_motion():
@@ -466,6 +478,7 @@ def add_proxy():
         if rv[0].get("c") is None or rv[0].get("c") >= max_proxy:
             return _("Error, Max proxy for '%s' reached.") % (proxy), 400
     rv = get_db().prepare("INSERT INTO proxy(voter_id, proxy_id, granted_by) VALUES ($1,$2,$3)")(voterid, proxyid, g.voter)
+    write_proxy_log(voterid, 'proxygranted', 'proxy: '+str(proxyid))
     return rel_redirect("/proxy")
 
 @app.route("/proxy/revoke", methods=['POST'])
@@ -474,6 +487,7 @@ def revoke_proxy():
         return _('Forbidden'), 403
     id=request.form.get("id", "")
     rv = get_db().prepare("UPDATE proxy SET revoked=CURRENT_TIMESTAMP, revoked_by=$1 WHERE id=$2")(g.voter, int(id))
+    write_proxy_log(int(id), 'proxyrevoked', '')
     return rel_redirect("/proxy")
 
 @app.route("/proxy/revokeall", methods=['POST'])
@@ -481,6 +495,7 @@ def revoke_proxy_all():
     if not may_admin("proxyadmin"):
         return _('Forbidden'), 403
     rv = get_db().prepare("UPDATE proxy SET revoked=CURRENT_TIMESTAMP, revoked_by=$1 WHERE revoked IS NULL")(g.voter)
+    write_proxy_log(g.voter, 'proxyrevokedall', '')
     return rel_redirect("/proxy")
 
 @app.route("/language/<string:language>")
@@ -500,3 +515,25 @@ def create_user(email, host):
             db.prepare("INSERT INTO voter(\"email\", \"host\") VALUES($1, $2)")(email, host)
             messagetext=_("User '%s' inserted to %s.") % (email, host)
     click.echo(messagetext)
+
+@app.cli.command("motion-masking")
+@click.argument("motion")
+@click.argument("motionreason")
+@click.argument("host")
+def motion_masking(motion, motionreason, host):
+    if re.search(r"[%_\\]", motion):
+        messagetext = _("No wildcards allowed for motion entry '%s'.") % (motion)
+        click.echo(messagetext)
+    else:
+        db = get_db()
+        with db.xact():
+            rv = db.prepare("SELECT id FROM motion WHERE identifier LIKE $1 AND host = $2")(motion+"%", host)
+            count = len(rv)
+            messagetext = _("%s record(s) affected by masking of '%s'.") % (count, motion)
+            click.echo(messagetext)
+            if len(rv) != 0:
+                rv = db.prepare("SELECT id FROM motion WHERE content LIKE $1 AND host = $2")('%'+motionreason+"%", host)
+                rv = db.prepare("UPDATE motion SET name=$3, content=$4 WHERE identifier LIKE $1 AND host = $2 RETURNING id ")(motion+"%", host, _("Motion masked"), _("Motion masked on base of motion [%s](%s) on %s") % (motionreason, motionreason, datetime.now().strftime("%Y-%m-%d")))
+                messagetext = _("%s record(s) updated by masking of '%s'.") % (len(rv), motion)
+                write_masking_log(_("%s motion(s) masked on base of motion %s with motion identifier '%s' on host %s") %(len(rv), motionreason, motion, host))
+                click.echo(messagetext)
