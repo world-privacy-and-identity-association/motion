@@ -18,6 +18,21 @@
 {%- endif %}
 
 {%- if motion.running %}
+{%- if may_cancel or may_finish %}
+<h3>{{_('Motion handling')}}</h3>
+
+{%- if may_cancel %}
+<form action="/motion/{{motion.identifier}}/cancel" method="POST" class="form-inline">
+<input type="text" placeholder="{{_('Cancelation reason')}}" name="reason" class="form-control" required="yes">
+<button type="submit" class="btn btn-danger btn-confirm" data-confirm="{{_('Do you really want to cancel the motion?')}}" data-reply="{{_('Cancel')}},{{_('Confirm')}}" name="cancel" value="cancel" id="cancel">{{_('Cancel')}}</button></br>
+</form>
+{%- endif %}
+{%- if may_finish %}
+<form action="/motion/{{motion.identifier}}/finish" method="POST" class="form-inline">
+<button type="submit" class="btn btn-danger btn-confirm" data-confirm="{{_('Do you really want to finish the motion?')}}" data-reply="{{_('Cancel')}},{{_('Confirm')}}" name="finish" value="finish" id="finish">{{_('Finish')}}</button></br>
+</form>
+{%- endif %}
+{%- endif %}
 
 {%- if may_vote %}
 <div class="panel panel-info" id="votes">
@@ -46,17 +61,7 @@
 {%- endfor %}
 {%- endif %}
 
-{%- if may_cancel %}
-<form action="/motion/{{motion.identifier}}/cancel" method="POST" class="form-inline">
-<input type="text" placeholder="{{_('Cancelation reason')}}" name="reason" class="form-control" required="yes">
-<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">{{_('Cancel')}}</button></br>
-</form>
-{%- endif %}
-{%- if may_finish %}
-<form action="/motion/{{motion.identifier}}/finish" method="POST" class="form-inline">
-<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">{{_('Finish')}}</button></br>
-</form>
-{%- endif %}
+
 {%- endif %}
 <a href="/?start={{motion.id}}#motion-{{motion.id}}" class="btn btn-primary">{{_('Back')}}</a>
 {%- endblock %}

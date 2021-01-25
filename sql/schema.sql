@@ -22,6 +22,7 @@ CREATE TABLE motion (id serial NOT NULL,
 CREATE UNIQUE INDEX motion_ident ON motion (identifier);
 
 DROP TABLE IF EXISTS vote;
+DROP TABLE IF EXISTS voteresult;
 DROP TYPE IF EXISTS "vote_type";
 CREATE TYPE "vote_type" AS ENUM ('yes', 'no', 'abstain');
 CREATE TABLE vote (motion_id INTEGER NOT NULL,
