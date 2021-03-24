@@ -158,7 +158,7 @@ def init_footer_variables():
         footer = dict( version_year=version_year, 
             copyright_link=app.config.get("COPYRIGHTLINK"),
             copyright_name=app.config.get("COPYRIGHTNAME"),
-            imprint_link=app.config.get("DATAPROTECTIONLINK"),
+            imprint_link=app.config.get("IMPRINTLINK"),
             dataprotection_link=app.config.get("DATAPROTECTIONLINK")
         )
     )
