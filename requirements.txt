@@ -3,7 +3,7 @@ Flask==1.1.2
 Flask-Babel==1.0.0
 itsdangerous==0.24
 Jinja2==2.11.2
-MarkupSafe==1.0
+MarkupSafe==1.1.1
 py-postgresql==1.2.1
 Werkzeug==1.0.1
 Flask-Markdown==0.3
