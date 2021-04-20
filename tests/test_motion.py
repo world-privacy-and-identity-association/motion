@@ -406,12 +406,14 @@ class CreateMotionTests(BasicTest):
 
         motion='g1.20200402.004'
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
-        testtext= '<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">Cancel</button>'
+        testtext= '<button type="submit" class="btn btn-danger btn-confirm" data-confirm="Do you really want to cancel the motion?" '\
+            + 'data-reply="Cancel,Confirm" name="cancel" value="cancel" id="cancel">Cancel</button>'
         self.assertIn(str.encode(testtext), result.data)
 
         motion='g1.20200402.004'
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': 'testuser/vote:*'}, follow_redirects=True)
-        testtext= '<button type="submit" class="btn btn-danger" name="cancel" value="cancel" id="cancel">Cancel</button>'
+        testtext= '<button type="submit" class="btn btn-danger btn-confirm" data-confirm="Do you really want to cancel the motion?" '\
+            + 'data-reply="Cancel,Confirm" name="cancel" value="cancel" id="cancel">Cancel</button>'
         self.assertNotIn(str.encode(testtext), result.data)
 
     def test_cancelMotion(self):
@@ -451,12 +453,14 @@ class CreateMotionTests(BasicTest):
 
         motion='g1.20200402.004'
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': user}, follow_redirects=True)
-        testtext= '<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">Finish</button>'
+        testtext= '<button type="submit" class="btn btn-danger btn-confirm" data-confirm="Do you really want to finish the motion?" '\
+            + 'data-reply="Cancel,Confirm" name="finish" value="finish" id="finish">Finish</button>'
         self.assertIn(str.encode(testtext), result.data)
 
         motion='g1.20200402.004'
         result = self.app.get('/motion/' + motion, environ_base={'USER_ROLES': 'testuser/vote:*'}, follow_redirects=True)
-        testtext= '<button type="submit" class="btn btn-danger" name="finish" value="finish" id="finish">Finish</button>'
+        testtext= '<button type="submit" class="btn btn-danger btn-confirm" data-confirm="Do you really want to finish the motion?" '\
+            + 'data-reply="Cancel,Confirm" name="finish" value="finish" id="finish">Finish</button>'
         self.assertNotIn(str.encode(testtext), result.data)
 
     def test_finishMotion(self):
